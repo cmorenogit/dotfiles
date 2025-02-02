@@ -3,9 +3,11 @@ alias sudo='sudo '
 
 alias ..="cd .."
 alias ...="cd ../.."
-alias ls="eza --icons"
-alias ll="eza -l --icons"
-alias la="eza -la --icons"
+alias ls="eza $_EZA_PARAMS"
+alias ll="eza -l $_EZA_PARAMS"
+alias la="eza -lah $_EZA_PARAMS"
+alias dops='docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"'
+alias doco='docker-compose'
 alias ~="cd ~"
 alias dotfiles='cd $DOTFILES_PATH'
 
