@@ -6,6 +6,7 @@ alias ...="cd ../.."
 alias ls="eza $_EZA_PARAMS"
 alias ll="eza -l $_EZA_PARAMS"
 alias la="eza -lah $_EZA_PARAMS"
+alias las="eza -lah -s modified --reverse $_EZA_PARAMS"
 alias dops='docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"'
 alias doco='docker-compose'
 alias ~="cd ~"

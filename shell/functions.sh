@@ -26,6 +26,10 @@ lazynvm() {
   [ -s "$(brew --prefix)/opt/nvm/etc/bash_completion.d/nvm" ] && \. "$(brew --prefix)/opt/nvm/etc/bash_completion.d/nvm" # Carga bash_completion
 }
 
+eg() {
+  eza --color=always | grep --color=always "$@"
+}
+
 # Función genérica para comandos que dependen de NVM
 nvm_command() {
   lazynvm
