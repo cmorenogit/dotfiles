@@ -42,28 +42,29 @@ quick-terminal-autohide = true
 
 #🎡Theme
 
-theme = MaterialDesignColors
+theme = vesper
+# theme = MaterialDesignColors
 bold-is-bright = true
 
-background = #1a2233
+# background = #1a2233
 foreground = #ffffff
 selection-background = #4e6a78
 selection-foreground = #ffffff
 
-palette = 0=#435b67
-palette = 1=#f83d32
-palette = 2=#3cff64
-palette = 3=#fef878
-palette = 4=#37b6ff
-palette = 5=#7026f4
-palette = 6=#59ffd1
-palette = 7=#ffffff
-palette = 8=#a1b0b8
-palette = 9=#fc746d
-palette = 10=#5cff8e
-palette = 11=#fee16c
-palette = 12=#70cfff
-palette = 13=#9a77f8
-palette = 14=#9affe6
-palette = 15=#ffffff
+# palette = 0=#435b67
+# palette = 1=#f83d32
+# palette = 2=#3cff64
+# palette = 3=#fef878
+# palette = 4=#37b6ff
+# palette = 5=#7026f4
+# palette = 6=#59ffd1
+# palette = 7=#ffffff
+# palette = 8=#a1b0b8
+# palette = 9=#fc746d
+# palette = 10=#5cff8e
+# palette = 11=#fee16c
+# palette = 12=#70cfff
+# palette = 13=#9a77f8
+# palette = 14=#9affe6
+# palette = 15=#ffffff
 
