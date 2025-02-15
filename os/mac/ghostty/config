@@ -1,6 +1,6 @@
 shell-integration = zsh
-
-#Window
+title = Ghostty
+window-title-font-family = DankMono Nerd Font
 
 #macos-titlebar-style = hidden
 background-opacity = 0.95
@@ -14,38 +14,37 @@ mouse-scroll-multiplier = 2
 mouse-hide-while-typing = true
 
 #Font
-
-font-size = 14
+font-family =  DankMono Nerd Font
+font-size = 15
+font-feature=-liga
 font-thicken = true
-#adjust-cell-height = 10%
+adjust-cell-height = 15%
 
 
 #Clipboard
-
 clipboard-read = allow
 clipboard-write = allow
 copy-on-select = false
 
 #Cursor
-
 cursor-color = #eaeaea
 cursor-style = bar
 adjust-cursor-thickness = 50%
 cursor-color = #5cf19e
 
 #Quick Terminal
-
 keybind = global:cmd+opt+grave_accent=toggle_quick_terminal
 quick-terminal-position = bottom
 quick-terminal-animation-duration = 0.06
 quick-terminal-autohide = true
 
-#🎡Theme
+keybind = cmd+opt+left=goto_split:left
+keybind = cmd+opt+right=goto_split:right
 
+#🎡Theme
 theme = vesper
 # theme = MaterialDesignColors
 bold-is-bright = true
-
 # background = #1a2233
 foreground = #ffffff
 selection-background = #4e6a78
