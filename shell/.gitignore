@@ -1,0 +1,42 @@
+# Sistemas Operativos
+.DS_Store
+Thumbs.db
+
+# Archivos de respaldo, temporales y swap (editores)
+*~
+*.swp
+*.bak
+*.tmp
+
+# Logs y cachés
+*.log
+.cache/
+
+# Configuración de IDEs y editores
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Node.js
+node_modules/
+
+# Archivos compilados y binarios
+*.class
+*.o
+*.pyc
+*.exe
+*.dll
+
+# Ambientes virtuales de Python
+venv/
+ENV/
+env/
+
+# Directorios de compilación o distribución
+dist/
+build/
+
+# Archivos generados minimizados y sourcemaps
+*.min.js
+*.map

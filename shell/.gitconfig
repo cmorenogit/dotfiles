@@ -1,0 +1,12 @@
+[user]
+	name = Cesar Moreno
+	email = cesar200526@gmail.com
+[core]
+	editor = code --wait
+	excludesfile = /Users/cmoreno/.gitignore
+	autocrlf = input
+[merge]
+	tool = vimdiff
+	ff = false
+[pull]
+	ff = only
