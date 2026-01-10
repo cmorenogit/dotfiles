@@ -27,3 +27,10 @@ prompt ${DOTLY_THEME:-codely}
 source "$DOTLY_PATH/shell/zsh/bindings/dot.zsh"
 source "$DOTLY_PATH/shell/zsh/bindings/reverse_search.zsh"
 source "$DOTFILES_PATH/shell/zsh/key-bindings.zsh"
+
+# Added by Antigravity
+export PATH="/Users/cmoreno/.antigravity/antigravity/bin:$PATH"
+
+# Added by Antigravity
+export PATH="/Users/cmoreno/.antigravity/antigravity/bin:$PATH"
+export MEM0_API_KEY="m0-FCQXqYbaTfCSaSZITd6kmCGNZlRVuQ3hthKWokwe"

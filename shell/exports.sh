@@ -24,6 +24,9 @@ fi
 
 export FZF_DEFAULT_OPTS="--color=$fzf_colors --reverse"
 
+# Personales
+export EDITOR='zed --wait'
+
 # ------------------------------------------------------------------------------
 # Path - The higher it is, the more priority it has
 # ------------------------------------------------------------------------------
@@ -35,6 +38,7 @@ path=(
 	"$GEM_HOME/bin"
 	"$GOPATH/bin"
 	"$HOME/.cargo/bin"
+	"$HOME/.local/bin"
 	"/usr/local/opt/ruby/bin"
 	"/usr/local/opt/python/libexec/bin"
 	"/opt/homebrew/bin"

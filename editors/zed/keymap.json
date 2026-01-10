@@ -1,0 +1,70 @@
+// Zed keymap
+//
+// For information on binding keys, see the Zed
+// documentation: https://zed.dev/docs/key-bindings
+//
+// To see the default key bindings run `zed: open default keymap`
+// from the command palette.
+[
+  {
+    "context": "Workspace",
+    "bindings": {
+      // "shift shift": "file_finder::Toggle"
+      "cmd-`": "terminal_panel::ToggleFocus",
+      "shift-cmd-g": "git_panel::ToggleFocus"
+    }
+  },
+  {
+    "context": "Editor",
+    "bindings": {
+      // "j k": ["workspace::SendKeystrokes", "escape"]
+      "ctrl-q": ["editor::ToggleComments", { "advance_downwards": false }]
+    }
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "ctrl-cmd-o": null
+    }
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "alt-cmd-o": null
+    }
+  },
+  {
+    "bindings": {
+      "alt-cmd-i": null
+    }
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "alt-cmd-i": [
+        "projects::OpenRecent",
+        {
+          "create_new_window": false
+        }
+      ]
+    }
+  },
+  {
+    "context": "Editor",
+    "bindings": {
+      "ctrl-shift-k": "editor::DeleteLine"
+    }
+  },
+  {
+    "context": "Editor",
+    "bindings": {
+      "ctrl-shift-up": "editor::MoveLineUp"
+    }
+  },
+  {
+    "context": "Editor",
+    "bindings": {
+      "ctrl-shift-down": "editor::MoveLineDown"
+    }
+  }
+]

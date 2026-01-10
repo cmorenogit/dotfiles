@@ -2,7 +2,7 @@
 	name = Cesar Moreno
 	email = cesar200526@gmail.com
 [core]
-	editor = code --wait
+	editor = zed --wait
 	excludesfile = /Users/cmoreno/.gitignore
 	autocrlf = input
 [merge]
@@ -10,3 +10,13 @@
 	ff = false
 [pull]
 	ff = only
+[init]
+	defaultBranch = main
+[push]
+	autoSetupRemote = true
+[rerere]
+	enabled = true
+[diff]
+	colorMoved = default
+[fetch]
+	prune = true

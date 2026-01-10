@@ -27,7 +27,6 @@ clipboard-write = allow
 copy-on-select = false
 
 #Cursor
-cursor-color = #eaeaea
 cursor-style = bar
 adjust-cursor-thickness = 50%
 cursor-color = #5cf19e
@@ -55,7 +54,8 @@ selection-foreground = #ffffff
 # palette = 2=#3cff64
 # palette = 3=#fef878
 # palette = 4=#37b6ff
-# palette = 5=#7026f4
+# palette = 5=#7026f4as
+
 # palette = 6=#59ffd1
 # palette = 7=#ffffff
 # palette = 8=#a1b0b8
@@ -66,3 +66,9 @@ selection-foreground = #ffffff
 # palette = 13=#9a77f8
 # palette = 14=#9affe6
 # palette = 15=#ffffff
+keybind = shift+enter=text:\x1b\r
+
+#link-url = true
+#scrollback-limit = 10000000
+#resize-overlay = never
+#confirm-close-surface = false

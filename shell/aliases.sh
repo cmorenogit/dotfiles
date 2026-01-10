@@ -13,6 +13,7 @@ alias ~="cd ~"
 alias dotfiles='cd $DOTFILES_PATH'
 
 # Git
+alias gic="git commit -m"
 alias gaa="git add -A"
 alias gc='$DOTLY_PATH/bin/dot git commit'
 alias gca="git add --all && git commit --amend --no-edit"
@@ -23,17 +24,33 @@ alias gf="git fetch --all -p"
 alias gps="git push"
 alias gpsf="git push --force"
 alias gpl="git pull --rebase --autostash"
-alias gb="git branch"
+alias gbc="git switch -c"
+alias gb="git switch"
 alias gl='$DOTLY_PATH/bin/dot git pretty-log'
+alias cx='codex'
+alias oc="opencode"
+alias ocp="opencode -p"
+alias cxp='codex exec --skip-git-repo-check '
+alias ge='gemini'
+alias gep='gemini -p'
+alias cl="claude --dangerously-skip-permissions"
+alias clc="claude --dangerously-skip-permissions -c"
+alias clp="claude -p"
 
 # Utils
 alias k='kill -9'
 alias i.='(idea $PWD &>/dev/null &)'
 alias c.='(code $PWD &>/dev/null &)'
+alias z.='(zed $PWD &>/dev/null &)'
 alias o.='open .'
 alias up='dot package update_all'
 
+# Proyectos
+alias rr='./scripts/setup-local.sh'
+alias rr-mcp='./scripts/toggle-mcp.sh'
+alias rr-tunnel-start='./scripts/share-tunnel.sh start --build'
+alias rr-tunnel='./scripts/share-tunnel.sh'
 
-# Others
-alias c.='(code $PWD &>/dev/null &)'
-alias o.='(open .)'
+# Tmux
+alias tmuxa='tmux a -t'
+alias tmuxn='tmux new-session -s'
