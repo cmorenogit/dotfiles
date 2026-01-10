@@ -68,7 +68,7 @@ selection-foreground = #ffffff
 # palette = 15=#ffffff
 keybind = shift+enter=text:\x1b\r
 
-#link-url = true
+link-url = true
+confirm-close-surface = false
 #scrollback-limit = 10000000
 #resize-overlay = never
-#confirm-close-surface = false
