@@ -20,7 +20,7 @@ function recent_dirs() {
 
 # Define la función lazynvm para cargar NVM
 lazynvm() {
-  unset -f nvm node npm npx pnpm yarn
+  unset -f nvm node npm npx pnpm yarn claude 2>/dev/null
   export NVM_DIR="$HOME/.nvm"
   [ -s "$(brew --prefix)/opt/nvm/nvm.sh" ] && \. "$(brew --prefix)/opt/nvm/nvm.sh" # Carga nvm
   [ -s "$(brew --prefix)/opt/nvm/etc/bash_completion.d/nvm" ] && \. "$(brew --prefix)/opt/nvm/etc/bash_completion.d/nvm" # Carga bash_completion
@@ -45,3 +45,4 @@ nvm() { nvm_command nvm "$@"; }
 node() { nvm_command node "$@"; }
 npm() { nvm_command npm "$@"; }
 npx() { nvm_command npx "$@"; }
+claude() { nvm_command claude "$@"; }
