@@ -1,0 +1,31 @@
+#!/bin/bash
+# fnm-upgrade: Install/upgrade Node version and reinstall global packages
+# Usage: fnm-upgrade [version]  (default: --lts)
+# Examples:
+#   fnm-upgrade          # Install latest LTS
+#   fnm-upgrade 24       # Install Node 24
+#   fnm-upgrade --latest # Install latest current
+
+set -e
+
+VERSION="${1:---lts}"
+
+echo "Installing Node $VERSION..."
+fnm install "$VERSION"
+
+# Extract installed version number
+INSTALLED=$(fnm exec --using="$VERSION" node -v 2>/dev/null)
+
+echo "Setting $INSTALLED as default..."
+fnm default "$INSTALLED"
+fnm use "$INSTALLED"
+
+echo "Installing global packages..."
+npm install -g @googleworkspace/cli
+
+echo ""
+echo "Node:  $(node -v)"
+echo "npm:   $(npm -v)"
+echo "gws:   $(gws --version 2>&1 | head -1)"
+echo ""
+echo "Done. Default is now $INSTALLED"
