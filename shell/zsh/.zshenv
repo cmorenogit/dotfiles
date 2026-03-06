@@ -5,4 +5,5 @@ export ZIM_HOME="$DOTFILES_PATH/shell/zsh/.zim"
 export _EZA_PARAMS="--git --group-directories-first --time-style=long-iso --color-scale=all --icons"
 
 # fnm: Node version manager (works in non-interactive shells, MCP servers, Git hooks)
-eval "$(fnm env)"
+# Use absolute path because .zshenv runs before PATH includes /opt/homebrew/bin
+eval "$(/opt/homebrew/bin/fnm env)"
