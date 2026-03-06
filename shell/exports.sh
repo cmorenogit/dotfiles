@@ -26,6 +26,7 @@ export FZF_DEFAULT_OPTS="--color=$fzf_colors --reverse"
 
 # Personales
 export EDITOR='zed --wait'
+export OLLAMA_HOST=http://192.168.18.22:11434
 
 # ------------------------------------------------------------------------------
 # Path - The higher it is, the more priority it has
@@ -51,5 +52,8 @@ path=(
 	"/sbin"
 	"$path"
 )
+
+# Re-apply fnm after PATH rebuild (fnm adds its multishell bin to PATH)
+eval "$(fnm env --use-on-cd)"
 
 export path
