@@ -1,0 +1,145 @@
+prSections:
+    - title: All Pull Requests
+      filters: is:open
+    - title: Needs My Review
+      filters: is:open review-requested:@me
+    - title: Involved
+      filters: is:open involves:@me -author:@me
+issuesSections:
+    - title: My Issues
+      filters: is:open author:@me
+    - title: Assigned
+      filters: is:open assignee:@me
+    - title: Involved
+      filters: is:open involves:@me -author:@me
+notificationsSections:
+    - title: All
+      filters: ""
+    - title: Created
+      filters: reason:author
+    - title: Participating
+      filters: reason:participating
+    - title: Mentioned
+      filters: reason:mention
+    - title: Review Requested
+      filters: reason:review-requested
+    - title: Assigned
+      filters: reason:assign
+    - title: Subscribed
+      filters: reason:subscribed
+    - title: Team Mentioned
+      filters: reason:team-mention
+repo:
+    branchesRefetchIntervalSeconds: 30
+    prsRefetchIntervalSeconds: 60
+defaults:
+    preview:
+        open: false
+        width: 70
+    prsLimit: 20
+    prApproveComment: LGTM
+    issuesLimit: 20
+    notificationsLimit: 20
+    view: prs
+    layout:
+        prs:
+            updatedAt:
+                width: 5
+            createdAt:
+                width: 5
+            repo:
+                width: 20
+            author:
+                width: 15
+            authorIcon:
+                hidden: false
+            assignees:
+                width: 20
+                hidden: true
+            base:
+                width: 15
+                hidden: true
+            lines:
+                width: 15
+        issues:
+            updatedAt:
+                width: 5
+            createdAt:
+                width: 5
+            repo:
+                width: 15
+            creator:
+                width: 10
+            creatorIcon:
+                hidden: false
+            assignees:
+                width: 20
+                hidden: true
+    refetchIntervalMinutes: 30
+keybindings:
+    universal:
+        - key: g
+          name: lazygit
+          command: >
+              cd {{.RepoPath}}; lazygit
+    prs:
+        - key: C
+          name: code review
+          command: "tmux new-window -n 'PR-{{.PrNumber}}' 'cd {{.RepoPath}} && wt switch pr:{{.PrNumber}} -x bash -- -c \"claude; cd {{.RepoPath}} && wt remove -D $(gh pr view {{.PrNumber}} --json headRefName -q .headRefName)\"'"
+repoPaths:
+    # R&R
+    ivaldovinos-app/apprecio-pulse: /Users/cmoreno/Code/work/back-pulse-cesar
+    ivaldovinos-app/apprecio-pulse-dev-cesar: /Users/cmoreno/Code/work/back-pulse-cesar
+    ivaldovinos-app/ryr-app-cesar: /Users/cmoreno/Code/work/app-rr-cesar
+    # Personal
+    cmoreno/app-profile: /Users/cmoreno/Code/personal/app-profile
+    # Fuerza
+    dcanje/core-api-encuestas: /Users/cmoreno/Code/work/fuerza/app-encuestas
+    dcanje/core-api-entrenamientos: /Users/cmoreno/Code/work/fuerza/app-entrenamientos
+    dcanje/frz-api-external-login: /Users/cmoreno/Code/work/fuerza/app-external-login
+    dcanje/frz-api-fuerza: /Users/cmoreno/Code/work/fuerza/app-fuerza
+    dcanje/frz-api-insignias: /Users/cmoreno/Code/work/fuerza/app-insignias
+    dcanje/frz-api-metas: /Users/cmoreno/Code/work/fuerza/app-metas
+    dcanje/frz-api-notificaciones: /Users/cmoreno/Code/work/fuerza/app-notificaciones
+    dcanje/frz-api-registro-foto: /Users/cmoreno/Code/work/fuerza/app-registro-foto
+    dcanje/incentivos-laravel: /Users/cmoreno/Code/work/fuerza/incentivos
+    dcanje/frz-portal-web-fuerza: /Users/cmoreno/Code/work/fuerza/web-fuerza
+    dcanje/prd-old-portal-encuestas: /Users/cmoreno/Code/work/fuerza/web-old-portal-encuestas
+    dcanje/core-portal-entrenamientos: /Users/cmoreno/Code/work/fuerza/web-portal-entrenamientos
+    # Smart Loyalty
+    dcanje/exp-api-invita-amigos: /Users/cmoreno/Code/work/smart-loyalty/app-referidos-amigos
+    dcanje/exp-api-experience: /Users/cmoreno/Code/work/smart-loyalty/app-smart-loyalty
+    dcanje/exp-web-experience: /Users/cmoreno/Code/work/smart-loyalty/web-smart-loyalty
+    # Engagement
+    dcanje/exp-api-registro-boletas: /Users/cmoreno/Code/work/engagement/app-desafios-boletas
+    dcanje/exp-api-apprecio-play: /Users/cmoreno/Code/work/engagement/apprecio-play
+    dcanje/incentivos-auth-service: /Users/cmoreno/Code/work/engagement/auth-service
+    dcanje/incentivos-copilot-service: /Users/cmoreno/Code/work/engagement/copilot-service
+    dcanje/incentivos-log-service: /Users/cmoreno/Code/work/engagement/log-service
+    dcanje/incentivos-apprecio-com: /Users/cmoreno/Code/work/engagement/web-engagement
+theme:
+    colors:
+        text:
+            primary: "#F7F1FF"
+            secondary: "#5AD4E6"
+            inverted: "#F7F1FF"
+            faint: "#3E4057"
+            warning: "#FC618D"
+            success: "#7BD88F"
+        background:
+            selected: "#535155"
+        border:
+            primary: "#948AE3"
+            secondary: "#7BD88F"
+            faint: "#3E4057"
+    ui:
+        sectionsShowCount: true
+        table:
+            showSeparator: true
+            compact: true
+pager:
+    diff: diffnav
+confirmQuit: false
+showAuthorIcons: true
+smartFilteringAtLaunch: true
+includeReadNotifications: true

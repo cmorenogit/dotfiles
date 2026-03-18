@@ -1,5 +1,6 @@
 shell-integration = zsh
-title = Ghostty
+command = tmux new-session -A -s main
+#title = Ghostty
 window-title-font-family = DankMono Nerd Font
 
 #macos-titlebar-style = hidden
@@ -12,6 +13,7 @@ window-padding-balance = true
 window-colorspace = display-p3
 mouse-scroll-multiplier = 2
 mouse-hide-while-typing = true
+macos-option-as-alt = true
 
 #Font
 font-family =  DankMono Nerd Font
@@ -72,3 +74,6 @@ link-url = true
 confirm-close-surface = false
 #scrollback-limit = 10000000
 #resize-overlay = never
+
+auto-update = "download"
+auto-update-channel = "tip"
