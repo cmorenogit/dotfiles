@@ -296,25 +296,6 @@ En modo `--full`, expandir cada item de "Mis Tareas" con:
 - Dependencias
 - Contexto de Engram (si hay)
 
-### FASE 3: Sync a Google Drive (silencioso)
-
-Después de mostrar el briefing, sincronizar estado-semana.md a Drive.
-
-**Carpeta destino:** `Personal Cesar/Estado Semanal/` (ID: `11R8Pa7w_oquA_1MeiO7ZLHIXiti_Fb-Z`)
-
-```bash
-# Buscar si existe
-gws drive files list --params '{"q": "name=\"estado-semana.md\" and \"11R8Pa7w_oquA_1MeiO7ZLHIXiti_Fb-Z\" in parents and trashed=false", "fields": "files(id,name)"}'
-
-# Si existe → actualizar
-gws drive files update --params '{"fileId": "ID_ARCHIVO"}' --upload /Users/cmoreno/Code/docs-projects/_work/apprecio/estado-semana.md
-
-# Si no existe → crear
-gws drive files create --json '{"name": "estado-semana.md", "parents": ["11R8Pa7w_oquA_1MeiO7ZLHIXiti_Fb-Z"]}' --upload /Users/cmoreno/Code/docs-projects/_work/apprecio/estado-semana.md
-```
-
-No reportar al usuario salvo error: `⚠️ Sync a Drive falló: [error]`
-
 ## Reglas Generales
 
 - **NO modificar estado-semana.md** (excepto transición de semana). /today es READ-ONLY para el briefing.

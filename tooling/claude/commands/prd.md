@@ -183,12 +183,54 @@ mem_save(
 )
 ```
 
+### PHASE 4.5: Save versioned copy to Tolaria vault
+
+Save a **versioned, human-readable copy** to the vault for evolution tracking. Engram is the cache; vault is the canonical history.
+
+**Path:** `_work/apprecio/prds/{change-name}-v{N}.md`
+
+Where `N` is determined by:
+1. List existing files matching `_work/apprecio/prds/{change-name}-v*.md`
+2. If none → `N = 1`
+3. If present → `N = max(existing) + 1`
+
+**File content** = full PRD markdown body, with this Tolaria frontmatter prepended:
+
+```yaml
+---
+type: PRD
+status: Draft
+belongs_to: "[[<project-slug>]]"            # rr | fuerza | engagement | smart-loyalty | incentivos
+related_to:                                  # opcional, módulos afectados
+  - "[[<module-1>]]"
+  - "[[<module-2>]]"
+version: {N}
+change_name: {change-name}
+date: YYYY-MM-DD
+source_drive_docs:                           # IDs de docs Drive usados (si aplica)
+  - "<doc-id-1>"
+  - "<doc-id-2>"
+engram_topic: "sdd/{change-name}/prd"        # back-link al cache Engram
+---
+```
+
+**Mode-specific behavior:**
+
+| Mode | Path action |
+|------|-------------|
+| `--create` | Always creates `v{N}` (next number) |
+| `--update` | Creates new `v{N+1}` (preserves history). Old versions remain. |
+| `--edit` | Creates new `v{N+1}` (every edit is a version). Old versions remain. |
+
+If `_work/apprecio/prds/` doesn't exist, create it.
+
 ### PHASE 5: Confirm and Next Steps
 
 Show the user:
 ```
-PRD generated and saved to Engram.
+PRD generated and saved (Engram cache + vault canonical).
 - Topic key: sdd/{change-name}/prd
+- Vault: _work/apprecio/prds/{change-name}-v{N}.md
 - User stories: {count}
 - Requirements: {count}
 - Source docs: {count}

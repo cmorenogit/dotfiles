@@ -5,7 +5,7 @@ description: "Investiga y documenta funcionalidades, flujos o estado de implemen
 
 # /document — Documentation Generator
 
-Investiga, analiza y genera documentación compartible sobre cualquier tema técnico o de producto. El documento se adapta a la audiencia y se guarda localmente + Drive.
+Investiga, analiza y genera documentación compartible sobre cualquier tema técnico o de producto. El documento se adapta a la audiencia y se guarda en el vault Tolaria con frontmatter tipado y relaciones (`belongs_to`, `related_to`).
 
 ## Arguments
 
@@ -28,28 +28,35 @@ Investiga, analiza y genera documentación compartible sobre cualquier tema téc
 
 ### 1.1 Detect project from working directory
 
-| Directory pattern | Proyecto | Drive folder |
-|-------------------|----------|-------------|
-| `fuerza` | Fuerza | `Trabajo/Fuerza/` |
-| `back-pulse`, `app-rr` | R&R | `Trabajo/R&R/` |
-| `engagement` | Engagement | `Trabajo/Engagement/` |
-| `smart-loyalty` | Smart Loyalty | `Trabajo/Smart Loyalty/` |
-| `docs-projects` | Apprecio (general) | `Trabajo/` |
-| (otro) | Detectar del contenido | `Trabajo/` |
+Mapping a Tolaria knowledge graph del vault `docs-projects`:
 
-**Drive parent folder (Trabajo):** `12dpqhzzN1Mu9-Rcqryu0jp6lmBsau2gh`
+| Directory pattern (cwd) | `belongs_to` (Project note) | Scope |
+|-------------------------|-----------------------------|-------|
+| `back-pulse-*`, `app-rr-*`, `pulse-dev` | `"[[rr]]"` | work |
+| `fuerza/*` | `"[[fuerza]]"` | work |
+| `engagement` | `"[[engagement]]"` | work |
+| `smart-loyalty` | `"[[smart-loyalty]]"` | work |
+| `agentes-hub-*` o cross-proyecto | `"[[_shared]]"` | work |
+| `docs-projects` (vault directo) | preguntar al usuario | work |
+| `personal/{prism,app-prompts,analisis,app-profile}` | `"[[<nombre-proyecto>]]"` | personal |
+| (otro) | preguntar al usuario | depende |
 
-### 1.2 Detect document type
+**Vault root:** `/Users/cmoreno/Code/docs-projects` (symlink → iCloud Tolaria vault)
+**Carpetas de salida (work):** `_work/apprecio/{modules,decisions,flows,analyses,prds,requests}/`
+**Carpetas de salida (personal):** `_personal/projects/{nombre}/{modules,decisions,flows,analyses}/`
 
-| Signal in request | Type | Focus |
-|-------------------|------|-------|
-| módulo, servicio, API, endpoint | **Módulo/Servicio** | Qué hace, endpoints, dependencias, estado |
-| flujo, proceso, cómo funciona, paso a paso | **Flujo** | Secuencia, actores, diagrama |
-| feature, implementar, incorporar, nuevo | **Feature Brief** | Qué se hará, impacto, dependencias |
-| bug, error, problema, fallo, incidente | **Incident Report** | Qué pasó, causa, fix, prevención |
-| decisión, por qué, trade-off, elegir | **Decision Record** | Contexto, opciones, decisión tomada |
-| verificar, existe, está implementado, check | **Investigación** | Estado actual del código |
-| (default) | **Documentación** | Análisis general |
+### 1.2 Detect document type (Tolaria type)
+
+| Signal in request | `type` (Tolaria) | Carpeta destino | Focus |
+|-------------------|:-:|-----------------|-------|
+| módulo, servicio, API, endpoint | `Module` | `modules/` | Qué hace, endpoints, dependencias, estado |
+| flujo, proceso, cómo funciona, paso a paso | `Flow` | `flows/` | Secuencia, actores, diagrama |
+| feature, implementar, incorporar, nuevo | `Brief` | `analyses/` | Qué se hará, impacto, dependencias |
+| bug, error, problema, fallo, incidente | `Incident` | `analyses/` | Qué pasó, causa, fix, prevención |
+| decisión, por qué, trade-off, elegir | `Decision` | `decisions/` | Contexto, opciones, decisión tomada |
+| verificar, existe, está implementado, check | `Analysis` | `analyses/` | Estado actual del código |
+| solicitud, pedir, requerir | `Request` | `requests/` | Qué necesito, de quién, para cuándo |
+| (default) | `Note` | `analyses/` | Análisis general |
 
 ### 1.3 Detect audience from `--para`
 
@@ -274,85 +281,81 @@ When `--para` is specified, apply these transformations AFTER generating the bas
 - Add section `## Cómo verificar` with step-by-step
 - Add section `## Queries útiles` with copy-pasteable queries
 
-## Phase 4: Save
+## Phase 4: Save (vault Tolaria — única fuente de verdad)
 
-### 4.1 Local — always
+### 4.1 Frontmatter Tolaria — siempre
 
-Save to `docs/documentation/` in the current project:
+Todo documento DEBE tener frontmatter Tolaria-nativo. Plantilla mínima:
 
-```
-docs/documentation/[NOMBRE-EN-MAYUSCULAS].md
-```
-
-Naming rules:
-- UPPERCASE with hyphens
-- Remove articles (el, la, los, de, del, con)
-- Max 50 chars
-- Examples: `FLUJO-OAUTH-FUERZA.md`, `MODULO-ENTRENAMIENTOS.md`, `DECISION-CHERRY-PICK.md`
-
-If `docs/documentation/` doesn't exist, create it.
-
-### 4.2 Drive — always
-
-Upload to project subfolder in `Trabajo/`:
-
-1. **Check if project folder exists** in Drive (`Trabajo/`):
-   ```
-   gws drive files list --params '{"q": "name=\"{Proyecto}\" and \"12dpqhzzN1Mu9-Rcqryu0jp6lmBsau2gh\" in parents and mimeType=\"application/vnd.google-apps.folder\" and trashed=false"}'
-   ```
-
-2. **If not exists, create it:**
-   ```
-   gws drive files create --body '{"name": "{Proyecto}", "mimeType": "application/vnd.google-apps.folder", "parents": ["12dpqhzzN1Mu9-Rcqryu0jp6lmBsau2gh"]}'
-   ```
-
-3. **Check for `Documentación/` subfolder**, create if missing.
-
-4. **Upload the file:**
-   ```
-   gws drive files create --body '{"name": "{filename}", "parents": ["{doc-folder-id}"]}' --upload docs/documentation/{filename}
-   ```
-
-**Drive structure created on demand:**
-```
-Trabajo/
-├── Fuerza/
-│   └── Documentación/
-│       ├── MODULO-ENTRENAMIENTOS.md
-│       └── FLUJO-OAUTH.md
-├── R&R/
-│   └── Documentación/
-│       └── FEATURE-CHALLENGES.md
-└── ...
+```yaml
+---
+type: {Module|Flow|Decision|Analysis|Brief|Incident|Request|Note}
+status: {Draft|Active|Approved|Archived}
+belongs_to: "[[<project-or-module>]]"     # wikilink al Project/Module padre
+related_to:                                # opcional, lista de wikilinks
+  - "[[<related-1>]]"
+  - "[[<related-2>]]"
+audience:                                  # opcional, si --para fue usado
+  - "[[<persona>]]"
+date: YYYY-MM-DD                           # opcional, para Decision/Incident
+---
 ```
 
-### 4.3 Save to Engram
+**Reglas frontmatter:**
+- `type` viene de Phase 1.2
+- `belongs_to` viene de Phase 1.1
+- `related_to` se infiere de los temas mencionados (otros módulos, decisiones, flujos)
+- NO usar frontmatter `title:` — Tolaria toma el primer H1 del cuerpo como display title
+- Wikilinks SIEMPRE entre comillas: `"[[name]]"` (sintaxis YAML válida)
+
+### 4.2 Output path en el vault
+
+**Naming:** kebab-case sin tildes, sin espacios, sin artículos. Max 50 chars.
+
+| Tipo | Ruta destino (work) | Ruta destino (personal) |
+|------|---------------------|-------------------------|
+| `Module` | `_work/apprecio/modules/{slug}.md` | `_personal/projects/{proyecto}/modules/{slug}.md` |
+| `Flow` | `_work/apprecio/flows/{slug}.md` | `_personal/projects/{proyecto}/flows/{slug}.md` |
+| `Decision` | `_work/apprecio/decisions/{slug}-YYYY-MM.md` | `_personal/projects/{proyecto}/decisions/...` |
+| `Analysis` / `Brief` / `Incident` | `_work/apprecio/analyses/{slug}-YYYY-MM.md` | `_personal/projects/{proyecto}/analyses/...` |
+| `Request` | `_work/apprecio/requests/{destinatario}-YYYY-MM-DD.md` | n/a |
+| `Note` (default) | `_work/apprecio/analyses/{slug}.md` | `_personal/{...}` |
+
+**Ejemplos:** `flow-oauth-unificado.md`, `decision-recognition-budgets-2026-04.md`, `analysis-debug-challenges-2026-04.md`, `request-core-2026-04-25.md`.
+
+Si la carpeta destino no existe, crearla.
+
+### 4.3 Save to Engram (índice del knowledge graph)
 
 ```
 mem_save(
-  title: "doc/{project}/{topic-slug}",
-  topic_key: "doc/{project}/{topic-slug}",
+  title: "doc/{slug}",
+  topic_key: "doc/{slug}",
   type: "discovery",
-  content: "# {title}\n\n## Summary\n{resumen}\n\n## Files\n{archivos principales}\n\n## Drive: {drive-file-id}"
+  project: "{belongs_to value sin wikilinks}",
+  content: "# {title}\n\n## Summary\n{resumen}\n\n## Vault: {full-vault-path}\n## Type: {Tolaria type}\n## belongs_to: {value}\n## related_to: {list}"
 )
 ```
+
+### 4.4 Compartir con Drive (manual, opt-in)
+
+`/document` **NO sube a Drive automáticamente**. Si el usuario pide compartir explícitamente ("súbelo a Drive", "comparte con X"), usar el skill `gws-drive` ad-hoc para upload puntual. Vault es la fuente de verdad.
 
 ## Phase 5: Present
 
 Show the user:
 
 ```
-## Documento generado: {NOMBRE}
+## Documento generado: {slug}
 
-**Tipo:** {tipo} | **Para:** {destinatario}
+**Tipo:** {Tolaria type} | **belongs_to:** {project} | **Para:** {destinatario o "—"}
 
 {resumen ejecutivo — 2-3 líneas}
 
-**Guardado en:**
-- Local: `docs/documentation/{NOMBRE}.md`
-- Drive: `Trabajo/{Proyecto}/Documentación/{NOMBRE}.md`
+**Vault:** `_work/apprecio/{categoria}/{slug}.md`
+**Wikilinks creados:** {lista de related_to si aplica}
 
-{Si --para: "Listo para compartir con {destinatario}."}
+{Si --para: "Listo para compartir con {destinatario}. Para enviar por Drive: pídeme 'súbelo a Drive'."}
 ```
 
 ## Rules
@@ -363,5 +366,7 @@ Show the user:
 - **Sections are conditional**: Only include sections that add value
 - **Status icons**: ✅ (works), ❌ (missing), ⚠️ (partial)
 - **Be honest**: If something doesn't exist or is broken, say it
-- **Drive is silent**: Don't show upload/download details, only errors
+- **Vault is canonical**: el vault Tolaria es la única fuente de verdad. Drive es opt-in manual
+- **Tolaria-native frontmatter**: SIEMPRE incluir `type`, `belongs_to`. NO usar `title:` (primer H1 es el display title)
+- **Wikilinks > paths**: en `related_to` y referencias internas, usar `[[wikilink]]` no `path/file.md`
 - **Audience first**: When `--para` is set, the document is for THEM, not for César
