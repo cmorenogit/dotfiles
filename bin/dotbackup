@@ -1,0 +1,252 @@
+#!/bin/bash
+# dotbackup: Backup critical configs (claude, engram, gws)
+# Usage: dotbackup [--restore] [--list] [--dry-run]
+#
+# Backups go to ~/.dotfiles/backups/<tool>/
+# Sensitive files (.credentials, encryption keys) are excluded by default
+# Use --include-secrets to back them up (NOT committed to git)
+
+set -euo pipefail
+
+BACKUP_ROOT="$HOME/.dotfiles/backups"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+DRY_RUN=false
+INCLUDE_SECRETS=false
+ACTION="backup"
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+usage() {
+  echo "Usage: dotbackup [options]"
+  echo ""
+  echo "Options:"
+  echo "  --restore           Restore from latest backup"
+  echo "  --list              List available backups"
+  echo "  --dry-run           Show what would be backed up"
+  echo "  --include-secrets   Include sensitive files (.credentials, keys)"
+  echo "  --help              Show this help"
+  echo ""
+  echo "Tools backed up: claude, engram, gws"
+}
+
+log() { echo -e "${GREEN}[backup]${NC} $1"; }
+warn() { echo -e "${YELLOW}[warn]${NC} $1"; }
+err() { echo -e "${RED}[error]${NC} $1"; }
+dry() { echo -e "${CYAN}[dry-run]${NC} $1"; }
+
+# Parse args
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --restore) ACTION="restore"; shift ;;
+    --list) ACTION="list"; shift ;;
+    --dry-run) DRY_RUN=true; shift ;;
+    --include-secrets) INCLUDE_SECRETS=true; shift ;;
+    --help) usage; exit 0 ;;
+    *) err "Unknown option: $1"; usage; exit 1 ;;
+  esac
+done
+
+# --- BACKUP DEFINITIONS ---
+
+backup_file() {
+  local src="$1"
+  local dest_dir="$2"
+
+  if [[ ! -e "$src" ]]; then
+    warn "Not found: $src"
+    return
+  fi
+
+  if $DRY_RUN; then
+    dry "Would copy: $src → $dest_dir/"
+    return
+  fi
+
+  mkdir -p "$dest_dir"
+  cp -a "$src" "$dest_dir/"
+  log "Backed up: $src"
+}
+
+backup_dir() {
+  local src="$1"
+  local dest_dir="$2"
+
+  if [[ ! -d "$src" ]]; then
+    warn "Not found: $src"
+    return
+  fi
+
+  if $DRY_RUN; then
+    dry "Would copy dir: $src → $dest_dir/"
+    return
+  fi
+
+  mkdir -p "$dest_dir"
+  cp -a "$src" "$dest_dir/"
+  log "Backed up dir: $src"
+}
+
+do_backup() {
+  local dest="$BACKUP_ROOT/$TIMESTAMP"
+  log "Starting backup → $dest"
+  echo ""
+
+  # --- Claude Code ---
+  log "Claude Code configs..."
+  local claude_dest="$dest/claude"
+  backup_file "$HOME/.claude/settings.json" "$claude_dest"
+  backup_file "$HOME/.claude/keybindings.json" "$claude_dest"
+  backup_file "$HOME/.claude/CLAUDE.md" "$claude_dest"
+
+  # Commands & Skills (directories)
+  if [[ -d "$HOME/.claude/commands" ]]; then
+    backup_dir "$HOME/.claude/commands" "$claude_dest"
+  fi
+  if [[ -d "$HOME/.claude/skills" ]]; then
+    backup_dir "$HOME/.claude/skills" "$claude_dest"
+  fi
+  if [[ -d "$HOME/.claude/agents" ]]; then
+    backup_dir "$HOME/.claude/agents" "$claude_dest"
+  fi
+
+  # Secrets (optional)
+  if $INCLUDE_SECRETS; then
+    warn "Including sensitive files..."
+    backup_file "$HOME/.claude/.credentials.json" "$claude_dest/secrets"
+  fi
+
+  echo ""
+
+  # --- Engram ---
+  log "Engram database..."
+  local engram_dest="$dest/engram"
+  if [[ -f "$HOME/.engram/engram.db" ]]; then
+    if $DRY_RUN; then
+      dry "Would sqlite3 backup: engram.db → $engram_dest/"
+    else
+      mkdir -p "$engram_dest"
+      # Use sqlite3 .backup for consistent copy (WAL mode safe)
+      if command -v sqlite3 &>/dev/null; then
+        sqlite3 "$HOME/.engram/engram.db" ".backup '$engram_dest/engram.db'"
+        log "Backed up: engram.db (sqlite3 .backup)"
+      else
+        cp -a "$HOME/.engram/engram.db" "$engram_dest/"
+        warn "sqlite3 not found, used file copy (may be inconsistent if WAL active)"
+      fi
+    fi
+  else
+    warn "Engram DB not found"
+  fi
+
+  echo ""
+
+  # --- GWS ---
+  log "GWS configs..."
+  local gws_dest="$dest/gws"
+  backup_file "$HOME/.config/gws/client_secret.json" "$gws_dest"
+  backup_file "$HOME/.config/gws/accounts.json" "$gws_dest"
+
+  if $INCLUDE_SECRETS; then
+    backup_file "$HOME/.config/gws/.encryption_key" "$gws_dest/secrets"
+    # Backup all credential files
+    for cred in "$HOME/.config/gws"/credentials*.enc; do
+      [[ -f "$cred" ]] && backup_file "$cred" "$gws_dest/secrets"
+    done
+  fi
+
+  echo ""
+
+  if ! $DRY_RUN; then
+    # Create "latest" symlink
+    ln -sfn "$dest" "$BACKUP_ROOT/latest"
+    log "Done. Backup at: $dest"
+
+    # Count
+    local count
+    count=$(find "$dest" -type f | wc -l | tr -d ' ')
+    log "Total files: $count"
+
+    # Cleanup: keep last 5 backups
+    local backups
+    backups=$(ls -d "$BACKUP_ROOT"/2* 2>/dev/null | sort -r | tail -n +6)
+    if [[ -n "$backups" ]]; then
+      echo "$backups" | xargs rm -rf
+      log "Cleaned old backups (keeping last 5)"
+    fi
+  fi
+}
+
+do_list() {
+  if [[ ! -d "$BACKUP_ROOT" ]]; then
+    warn "No backups found at $BACKUP_ROOT"
+    exit 0
+  fi
+
+  echo "Available backups:"
+  echo ""
+  for dir in $(ls -d "$BACKUP_ROOT"/2* 2>/dev/null | sort -r); do
+    local name
+    name=$(basename "$dir")
+    local count
+    count=$(find "$dir" -type f | wc -l | tr -d ' ')
+    local latest=""
+    if [[ "$(readlink "$BACKUP_ROOT/latest" 2>/dev/null)" == "$dir" ]]; then
+      latest=" ${GREEN}← latest${NC}"
+    fi
+    echo -e "  $name  ($count files)$latest"
+  done
+}
+
+do_restore() {
+  local src="$BACKUP_ROOT/latest"
+
+  if [[ ! -d "$src" ]]; then
+    err "No backup found. Run 'dotbackup' first."
+    exit 1
+  fi
+
+  log "Restoring from: $(readlink "$src")"
+  echo ""
+
+  # Claude
+  if [[ -d "$src/claude" ]]; then
+    log "Restoring Claude configs..."
+    [[ -f "$src/claude/settings.json" ]] && cp -a "$src/claude/settings.json" "$HOME/.claude/"
+    [[ -f "$src/claude/keybindings.json" ]] && cp -a "$src/claude/keybindings.json" "$HOME/.claude/"
+    [[ -f "$src/claude/CLAUDE.md" ]] && cp -a "$src/claude/CLAUDE.md" "$HOME/.claude/"
+    [[ -d "$src/claude/commands" ]] && cp -a "$src/claude/commands" "$HOME/.claude/"
+    [[ -d "$src/claude/skills" ]] && cp -a "$src/claude/skills" "$HOME/.claude/"
+    [[ -d "$src/claude/agents" ]] && cp -a "$src/claude/agents" "$HOME/.claude/"
+    log "Claude restored"
+  fi
+
+  # Engram
+  if [[ -f "$src/engram/engram.db" ]]; then
+    log "Restoring Engram DB..."
+    cp -a "$src/engram/engram.db" "$HOME/.engram/"
+    log "Engram restored"
+  fi
+
+  # GWS
+  if [[ -d "$src/gws" ]]; then
+    log "Restoring GWS configs..."
+    [[ -f "$src/gws/client_secret.json" ]] && cp -a "$src/gws/client_secret.json" "$HOME/.config/gws/"
+    [[ -f "$src/gws/accounts.json" ]] && cp -a "$src/gws/accounts.json" "$HOME/.config/gws/"
+    log "GWS restored"
+  fi
+
+  echo ""
+  log "Restore complete. Secrets NOT restored (use manual copy if needed)."
+}
+
+# --- MAIN ---
+case $ACTION in
+  backup) do_backup ;;
+  list) do_list ;;
+  restore) do_restore ;;
+esac

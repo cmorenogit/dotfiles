@@ -1,0 +1,5 @@
+# Frequent directories via zoxide
+sort_order = ["config", "tmux", "zoxide"]
+
+# Hide from picker (covered by named sessions)
+blacklist = ["~/Code/personal/app-profile"]

@@ -8,6 +8,10 @@ alias ll="eza -l $_EZA_PARAMS"
 alias la="eza -lah $_EZA_PARAMS"
 alias las="eza -lah -s modified --reverse $_EZA_PARAMS"
 alias dops='docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"'
+
+# tmux
+alias t='tmux'
+alias tm='tmux new-session -A -s main'
 alias doco='docker-compose'
 alias ~="cd ~"
 alias dotfiles='cd $DOTFILES_PATH'
@@ -34,12 +38,11 @@ alias cxp='codex exec --skip-git-repo-check '
 alias ge='gemini'
 alias gep='gemini -p'
 alias cl="claude --dangerously-skip-permissions"
-alias clc="claude --dangerously-skip-permissions -c"
-alias clp="claude -p"
+alias clp="claude -p --model sonnet"
 
 # Utils
+alias htop='glances'
 alias k='kill -9'
-alias i.='(idea $PWD &>/dev/null &)'
 alias c.='(code $PWD &>/dev/null &)'
 alias z.='(zed $PWD &>/dev/null &)'
 alias o.='open .'
@@ -51,6 +54,8 @@ alias rr-mcp='./scripts/toggle-mcp.sh'
 alias rr-tunnel-start='./scripts/share-tunnel.sh start --build'
 alias rr-tunnel='./scripts/share-tunnel.sh'
 
-# Tmux
-alias tmuxa='tmux a -t'
-alias tmuxn='tmux new-session -s'
+alias ta='tmux attach -t'
+alias tn='tmux new-session -s'
+
+# SSH Mini
+alias mini="ssh mini"

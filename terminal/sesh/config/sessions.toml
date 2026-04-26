@@ -1,0 +1,6 @@
+# --- Named sessions ---
+
+[[session]]
+name = "profile-dev"
+path = "~/Code/personal/app-profile"
+startup_command = "source ~/.dotfiles/terminal/sesh/scripts/profile-dev.sh"

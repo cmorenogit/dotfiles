@@ -1,0 +1,8 @@
+# --- Wildcards by context ---
+
+[[wildcard]]
+pattern = "~/Code/work/*"
+
+[[wildcard]]
+pattern = "~/Code/personal/*"
+preview_command = "ls -la {}"

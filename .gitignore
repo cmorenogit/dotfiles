@@ -1,1 +1,17 @@
 .claude/
+backups/
+secrets.sh
+
+# Local secrets and machine credentials
+shell/secrets.sh
+shell/secrets.local.sh
+tooling/claude/credentials.local.json
+tooling/opencode/secrets.local
+
+# Cloud and auth runtime state
+**/hosts.yml
+**/*.db
+
+# Local overlays per machine
+**/*.local
+**/*.local.*

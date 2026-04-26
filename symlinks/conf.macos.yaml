@@ -18,5 +18,8 @@
     ~/bin/touch: /opt/homebrew/bin/gtouch
     ~/bin/zsh: /opt/homebrew/bin/zsh
     ~/.tmux.conf: terminal/tmux/.tmux.conf
+    ~/.config/ghostty/config: os/mac/ghostty/config
+    ~/.config/sesh: terminal/sesh
+    ~/.config/zed/settings.json: editors/zed/settings.json
     ~/Library/Application Support/lazygit/config.yml: terminal/lazygit/config.yml
     ~/.config/gh-dash/config.yml: terminal/gh-dash/config.yml

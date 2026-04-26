@@ -1,0 +1,7 @@
+#!/bin/bash
+# Wrapper para ejecutar npx con fnm cargado
+# Usado por MCPs que necesitan node/npx
+
+eval "$(/opt/homebrew/bin/fnm env)"
+
+exec npx "$@"

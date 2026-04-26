@@ -1,0 +1,17 @@
+#:schema https://github.com/joshmedeski/sesh/raw/main/sesh.schema.json
+
+# Fail fast on invalid keys
+strict_mode = true
+
+# Speed up repeated list/picker calls
+cache = true
+
+# Use 2 directory components for clearer names
+dir_length = 2
+
+# Split config by concern to keep dotfiles maintainable
+import = [
+  "~/.dotfiles/terminal/sesh/config/core.toml",
+  "~/.dotfiles/terminal/sesh/config/sessions.toml",
+  "~/.dotfiles/terminal/sesh/config/wildcards.toml"
+]

@@ -1,79 +1,52 @@
-shell-integration = zsh
-command = tmux new-session -A -s main
-#title = Ghostty
-window-title-font-family = DankMono Nerd Font
+# =============================================================================
+# Ghostty Configuration — optimized for tmux workflow
+# =============================================================================
 
-#macos-titlebar-style = hidden
+# Shell default (zsh)
+
+# Font
+font-family = DankMono Nerd Font
+font-size = 15
+font-feature = -liga
+font-thicken = true
+adjust-cell-height = 15%
+
+# Window
 background-opacity = 0.95
-background-blur-radius = 20
-window-save-state = always
-window-height = 14
-window-width = 180
+background-blur-radius = 10
+scrollback-limit = 1000
 window-padding-balance = true
 window-colorspace = display-p3
+confirm-close-surface = false
+
+# Input
 mouse-scroll-multiplier = 2
 mouse-hide-while-typing = true
 macos-option-as-alt = true
 
-#Font
-font-family =  DankMono Nerd Font
-font-size = 15
-font-feature=-liga
-font-thicken = true
-adjust-cell-height = 15%
-
-
-#Clipboard
+# Clipboard
 clipboard-read = allow
-clipboard-write = allow
 copy-on-select = false
 
-#Cursor
+# Cursor
 cursor-style = bar
 adjust-cursor-thickness = 50%
 cursor-color = #5cf19e
 
-#Quick Terminal
+# Quick Terminal (sin tmux — shell directo para comandos rápidos)
 keybind = global:cmd+opt+grave_accent=toggle_quick_terminal
 quick-terminal-position = bottom
 quick-terminal-animation-duration = 0.06
-quick-terminal-autohide = true
 
-keybind = cmd+opt+left=goto_split:left
-keybind = cmd+opt+right=goto_split:right
+# Keybindings
+keybind = shift+enter=text:\x1b\r
 
-#🎡Theme
+# Theme
 theme = vesper
-# theme = MaterialDesignColors
-bold-is-bright = true
-# background = #1a2233
-foreground = #ffffff
+bold-color = bright
 selection-background = #4e6a78
 selection-foreground = #ffffff
 
-# palette = 0=#435b67
-# palette = 1=#f83d32
-# palette = 2=#3cff64
-# palette = 3=#fef878
-# palette = 4=#37b6ff
-# palette = 5=#7026f4as
-
-# palette = 6=#59ffd1
-# palette = 7=#ffffff
-# palette = 8=#a1b0b8
-# palette = 9=#fc746d
-# palette = 10=#5cff8e
-# palette = 11=#fee16c
-# palette = 12=#70cfff
-# palette = 13=#9a77f8
-# palette = 14=#9affe6
-# palette = 15=#ffffff
-keybind = shift+enter=text:\x1b\r
-
-link-url = true
-confirm-close-surface = false
-#scrollback-limit = 10000000
-#resize-overlay = never
-
-auto-update = "download"
-auto-update-channel = "tip"
+# Updates
+auto-update = download
+auto-update-channel = tip

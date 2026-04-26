@@ -7,6 +7,15 @@ export CODELY_THEME_PROMPT_IN_NEW_LINE=false
 export CODELY_THEME_PWD_MODE="short" # full, short, home_relative
 
 # ------------------------------------------------------------------------------
+# Claude Code statusline theme (catppuccin-mocha, dracula, nord)
+# ------------------------------------------------------------------------------
+export STATUSLINE_THEME="catppuccin-mocha"
+export STATUSLINE_LAYOUT="full"
+
+# Claude Code rendering: enable flicker-free terminal UI
+export CLAUDE_CODE_NO_FLICKER=1
+
+# ------------------------------------------------------------------------------
 # Languages
 # ------------------------------------------------------------------------------
 export JAVA_HOME='/Library/Java/JavaVirtualMachines/amazon-corretto-15.jdk/Contents/Home'
@@ -26,7 +35,7 @@ export FZF_DEFAULT_OPTS="--color=$fzf_colors --reverse"
 
 # Personales
 export EDITOR='zed --wait'
-export OLLAMA_HOST=http://192.168.18.22:11434
+export OLLAMA_HOST='http://192.168.0.150:11434'
 
 # ------------------------------------------------------------------------------
 # Path - The higher it is, the more priority it has
@@ -40,8 +49,6 @@ path=(
 	"$GOPATH/bin"
 	"$HOME/.cargo/bin"
 	"$HOME/.local/bin"
-	"/usr/local/opt/ruby/bin"
-	"/usr/local/opt/python/libexec/bin"
 	"/opt/homebrew/bin"
 	"/opt/homebrew/sbin"
 	"/usr/local/bin"
@@ -54,6 +61,8 @@ path=(
 )
 
 # Re-apply fnm after PATH rebuild (fnm adds its multishell bin to PATH)
-eval "$(fnm env --use-on-cd)"
+if command -v fnm >/dev/null 2>&1; then
+	eval "$(fnm env --use-on-cd)"
+fi
 
 export path

@@ -1,0 +1,185 @@
+# Lazygit Professional Config
+# Managed via dotfiles: ~/.dotfiles/terminal/lazygit/config.yml
+# Symlinked to: ~/Library/Application Support/lazygit/config.yml
+
+# === GUI ===
+gui:
+  nerdFontsVersion: "3"
+  showFileTree: true
+  showFileIcons: true
+  showNumstatInFilesView: true
+  showListFooter: true
+  showBranchCommitHash: true
+  showDivergenceFromBaseBranch: arrowAndNumber
+  showRandomTip: false
+  showBottomLine: true
+  showPanelJumps: true
+  border: rounded
+  animateExplosion: true
+  mouseEvents: true
+  sidePanelWidth: 0.3333
+  expandFocusedSidePanel: true
+  mainPanelSplitMode: flexible
+  filterMode: substring
+  commitAuthorShortLength: 2
+  commitAuthorLongLength: 17
+  commitHashLength: 8
+  commandLogSize: 8
+  scrollOffMargin: 3
+  wrapLinesInStagingView: true
+  switchToFilesAfterStashPop: true
+  switchTabsWithPanelJumpKeys: true
+
+  theme:
+    activeBorderColor:
+      - green
+      - bold
+    inactiveBorderColor:
+      - '#435b67'
+    searchingActiveBorderColor:
+      - cyan
+      - bold
+    optionsTextColor:
+      - '#37b6ff'
+    selectedLineBgColor:
+      - reverse
+    inactiveViewSelectedLineBgColor:
+      - bold
+    cherryPickedCommitFgColor:
+      - blue
+    cherryPickedCommitBgColor:
+      - cyan
+    unstagedChangesColor:
+      - red
+
+  commitLength:
+    show: true
+
+# === GIT ===
+git:
+  pagers:
+    - pager: "delta --paging=never"
+      colorArg: always
+
+  commit:
+    signOff: false
+    autoWrapCommitMessage: true
+    autoWrapWidth: 72
+
+  mainBranches:
+    - main
+    - master
+    - develop
+
+  autoFetch: true
+  autoRefresh: true
+  fetchAll: true
+  autoStageResolvedConflicts: true
+  diffContextSize: 3
+  parseEmoji: true
+
+  log:
+    showGraph: always
+    order: topo-order
+    showWholeGraph: false
+
+  localBranchSortOrder: date
+  truncateCopiedCommitHashesTo: 12
+
+# === OS ===
+os:
+  edit: 'zed {{filename}}'
+  editAtLine: 'zed {{filename}}:{{line}}'
+  editAtLineAndWait: 'zed --wait {{filename}}:{{line}}'
+  editInTerminal: false
+  openDirInEditor: 'zed {{dir}}'
+
+# === BEHAVIOR ===
+confirmOnQuit: false
+quitOnTopLevelReturn: false
+disableStartupPopups: true
+promptToReturnFromSubprocess: true
+notARepository: prompt
+
+# === CUSTOM COMMANDS ===
+customCommands:
+  # Conventional Commit (ctrl+v in files panel)
+  - key: '<c-v>'
+    context: files
+    description: 'Conventional Commit'
+    prompts:
+      - type: menu
+        title: 'Commit type'
+        key: Type
+        options:
+          - name: feat
+            description: 'A new feature'
+            value: 'feat'
+          - name: fix
+            description: 'A bug fix'
+            value: 'fix'
+          - name: refactor
+            description: 'Code refactoring (no feature/fix)'
+            value: 'refactor'
+          - name: docs
+            description: 'Documentation changes'
+            value: 'docs'
+          - name: test
+            description: 'Adding or updating tests'
+            value: 'test'
+          - name: chore
+            description: 'Maintenance tasks'
+            value: 'chore'
+          - name: style
+            description: 'Code style (formatting, etc.)'
+            value: 'style'
+          - name: perf
+            description: 'Performance improvement'
+            value: 'perf'
+          - name: ci
+            description: 'CI/CD changes'
+            value: 'ci'
+          - name: build
+            description: 'Build system changes'
+            value: 'build'
+          - name: revert
+            description: 'Revert a previous commit'
+            value: 'revert'
+      - type: input
+        title: 'Scope (optional, enter to skip)'
+        key: Scope
+        initialValue: ''
+      - type: input
+        title: 'Commit message'
+        key: Message
+    command: >-
+      git commit -m "{{.Form.Type}}{{if .Form.Scope}}({{.Form.Scope}}){{end}}: {{.Form.Message}}"
+    loadingText: 'Committing...'
+
+  # Force push with lease (safer than force push)
+  - key: 'F'
+    context: global
+    description: 'Force push with lease'
+    command: 'git push --force-with-lease'
+    loadingText: 'Force pushing...'
+
+  # Open repo in browser
+  - key: 'O'
+    context: global
+    description: 'Open repo in browser'
+    command: 'gh browse'
+    loadingText: 'Opening...'
+
+  # Delete merged branches
+  - key: '<c-b>'
+    context: localBranches
+    description: 'Delete merged branches'
+    command: >-
+      git branch --merged | grep -v '\*\|main\|master\|develop' | xargs -n 1 git branch -d
+    loadingText: 'Pruning...'
+
+# === KEYBINDINGS ===
+keybinding:
+  universal:
+    quit: q
+    return: <esc>
