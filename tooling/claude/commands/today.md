@@ -90,7 +90,7 @@ Aprendizajes PE de W{anterior}:
 
    | Sección | Acción |
    |---------|--------|
-   | Frontmatter | Actualizar `week`, `updated`, reset contadores, nuevo `sprint_goal: "TBD"` |
+   | Frontmatter | Actualizar SOLO `week`, `updated`, `updated_by`, `items_*`, `sprint_goal`. **PRESERVAR siempre** `type`, `belongs_to`, `related_to`, `related`, `tags`, y cualquier otro campo no listado. NO regenerar el bloque YAML completo |
    | Tickets FSV | CARRY FORWARD (los activos) |
    | Tareas en Progreso | CARRY FORWARD (las activas) |
    | Desarrollos en Progreso | CARRY FORWARD (los activos) |
