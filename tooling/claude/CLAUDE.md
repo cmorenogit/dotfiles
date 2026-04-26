@@ -188,12 +188,12 @@ Commits en inglés, Conventional Commits: `feat:`, `fix:`, `refactor:`, `docs:`,
 - **Drive:** read-only via skills `gws-*`. Solo `/prd` (lee PRDs externos) y `/ingest` (lee Notas de Gemini) tocan Drive. Sharing manual con `gws-drive` ad-hoc cuando el usuario lo pida
 - **Frontmatter recomendado** (compatible Obsidian/Tolaria/Dataview):
   - `type:` Module | Flow | Decision | Analysis | Brief | Incident | Request | PRD | Note
-  - `belongs_to: "[[<project>]]"` (rr | fuerza | engagement | smart-loyalty | incentivos | _shared)
+  - `project: <slug>` (rr | fuerza | engagement | smart-loyalty | incentivos | _shared) — tag string para Dataview filter (`WHERE project = "rr"`)
   - `related_to: ["[[x]]"]`, `status:`, `date:`
 - **Filenames:** kebab-case sin tildes. Primer H1 del cuerpo = display title (NO usar frontmatter `title:`)
 - **Estructura canónica work:** `_work/apprecio/{modules,flows,decisions,analyses,prds,requests,attachments}/`
 - **Estructura canónica personal:** `_personal/{learning,docs,projects}/`
-- **Detalle completo + mapping cwd→`belongs_to`:** `~/.claude/memory/policy_vault_first.md`
+- **Detalle completo + mapping cwd→`project`:** `~/.claude/memory/policy_vault_first.md`
 
 ---
 

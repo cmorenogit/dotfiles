@@ -291,7 +291,7 @@ Todo documento DEBE tener frontmatter Tolaria-nativo. Plantilla mínima:
 ---
 type: {Module|Flow|Decision|Analysis|Brief|Incident|Request|Note}
 status: {Draft|Active|Approved|Archived}
-belongs_to: "[[<project-or-module>]]"     # wikilink al Project/Module padre
+project: <slug>                            # rr | fuerza | engagement | smart-loyalty | incentivos | _shared
 related_to:                                # opcional, lista de wikilinks
   - "[[<related-1>]]"
   - "[[<related-2>]]"

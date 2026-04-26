@@ -200,7 +200,7 @@ Where `N` is determined by:
 ---
 type: PRD
 status: Draft
-belongs_to: "[[<project-slug>]]"            # rr | fuerza | engagement | smart-loyalty | incentivos
+project: <slug>                              # rr | fuerza | engagement | smart-loyalty | incentivos
 related_to:                                  # opcional, módulos afectados
   - "[[<module-1>]]"
   - "[[<module-2>]]"
