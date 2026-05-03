@@ -28,8 +28,6 @@ source "$DOTLY_PATH/shell/zsh/bindings/dot.zsh"
 source "$DOTLY_PATH/shell/zsh/bindings/reverse_search.zsh"
 source "$DOTFILES_PATH/shell/zsh/key-bindings.zsh"
 
-# opencode
-export PATH=/Users/cmoreno/.opencode/bin:$PATH
 
 # Agent Teams Lite (SDD) update
 alias sdd-update="cd ~/Code/tools/agent-teams-lite && git pull && ./scripts/install.sh --agent claude-code"
