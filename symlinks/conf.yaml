@@ -18,9 +18,3 @@
     ~/.zshrc: shell/zsh/.zshrc
     ~/.inputrc: shell/.inputrc
     ~/.gitconfig: shell/.gitconfig
-    ~/.config/opencode/opencode.json: tooling/opencode/opencode.json
-    ~/.config/opencode/AGENTS.md: tooling/opencode/AGENTS.md
-    ~/.config/opencode/commands: tooling/opencode/commands
-    ~/.config/opencode/agents: tooling/opencode/agents
-    ~/.config/opencode/plugin: tooling/opencode/plugin
-    ~/.config/opencode/skill: tooling/opencode/skill
