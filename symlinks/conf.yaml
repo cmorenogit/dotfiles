@@ -18,16 +18,6 @@
     ~/.zshrc: shell/zsh/.zshrc
     ~/.inputrc: shell/.inputrc
     ~/.gitconfig: shell/.gitconfig
-    ~/.claude/CLAUDE.md: tooling/claude/CLAUDE.md
-    ~/.claude/commands: tooling/claude/commands
-    ~/.claude/agents: tooling/claude/agents
-    ~/.claude/skills: tooling/claude/skills
-    ~/.claude/hooks: tooling/claude/hooks
-    ~/.claude/keybindings.json: tooling/claude/keybindings.json
-    ~/.claude/settings.json: tooling/claude/settings.json
-    ~/.claude/statusline-command.sh: tooling/claude/statusline-command.sh
-    ~/.claude/statusline-layouts: tooling/claude/statusline-layouts
-    ~/.claude/statusline-themes: tooling/claude/statusline-themes
     ~/.config/opencode/opencode.json: tooling/opencode/opencode.json
     ~/.config/opencode/AGENTS.md: tooling/opencode/AGENTS.md
     ~/.config/opencode/commands: tooling/opencode/commands
