@@ -35,7 +35,7 @@ export FZF_DEFAULT_OPTS="--color=$fzf_colors --reverse"
 
 # Personales
 export EDITOR='zed --wait'
-export OLLAMA_HOST='http://192.168.0.150:11434'
+export OLLAMA_HOST='http://100.105.187.61:11434'
 
 # ------------------------------------------------------------------------------
 # Path - The higher it is, the more priority it has
