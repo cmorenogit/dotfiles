@@ -34,6 +34,9 @@ export PATH=/Users/cmoreno/.opencode/bin:$PATH
 # Agent Teams Lite (SDD) update
 alias sdd-update="cd ~/Code/tools/agent-teams-lite && git pull && ./scripts/install.sh --agent claude-code"
 
+# Obsidian vault
+alias vault='cd ~/Code/_vault'
+
 # worktrunk: Git worktree management for parallel AI agent workflows
 eval "$(wt config shell init zsh)"
 
