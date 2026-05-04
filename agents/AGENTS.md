@@ -10,9 +10,9 @@
 
 **Mi equipo (Producto):**
 - Ignacio Valdovinos — Jefe de Producto (despliega a producción)
-- Julieth Ruiz — QA principal (intermediaria con Soporte; valida en QA + países)
-- Luisa, Faber, Kevin — Devs
-- Nico — QA + Doc app
+- Julieth — QA principal (intermediaria con Soporte; valida en QA + países)
+- Samuel, Faber, Kevin — Devs
+- Nicole — Producto (R&R y app)
 
 **Otros equipos clave:**
 - Soporte (Caco): Paulina deriva tickets, ejecutan queries de BD
@@ -108,7 +108,7 @@ Detalle (stacks, GitHub orgs, repos por servicio): `~/Code/_vault/_work/apprecio
 
 ```
 Diana (SaaS) detecta error
-  → Julieth crea JIRA (PM-XXXX) + califica FSV
+  → Julieth crea issue Linear + califica FSV
     → César investiga (info BD vía Soporte si necesario)
       → PR → Julieth valida QA + países → Ignacio despliega prod
         → Julieth confirma a Diana → cierre
@@ -122,7 +122,7 @@ Diana (SaaS) detecta error
 | Despliegues Fuerza/SL | @Ignacio Valdovinos | @Julieth Ruiz |
 | PRs Incentivos | @Cristian | @Ignacio Valdovinos |
 
-Detalle (templates JIRA/PR/Hilo/Mensaje, reglas de formato): `~/Code/_vault/_work/apprecio/_shared/process-fsv.md`
+Detalle (templates Issue Linear/PR/Hilo/Mensaje, reglas de formato): `~/Code/_vault/_work/apprecio/_shared/process-fsv.md`
 
 ---
 
@@ -201,12 +201,11 @@ Si el push falla, resolver y reintentar — no dejarlo a medias.
 
 ---
 
-# JIRA y Linear (aplica si MCP correspondiente disponible)
+# Linear (aplica si MCP disponible)
 
-- **JIRA** — sistema oficial Apprecio, obligatorio para flujo FSV. URL pattern: `https://apprecio-com.atlassian.net/browse/PM-XXXX`. Proyecto `PM`.
-- **Linear** — tracker personal de César (complementa JIRA). Workspace: `https://linear.app/cmorenodev`. Team: `CMO`. Es el canal principal de comunicación laboral en línea — cada comentario es comunicación, no solo metadata.
+- **Linear** — sistema oficial Apprecio para issue tracking. Workspace: `https://linear.app/apprecio-producto`. Dividido en 4 teams: `RYR` (R&R / Fuerza / SL / Engagement), `App` (mobile), `Platform` (infra / core / soporte), `Product Planning` (discovery, shaping). Es el canal principal de comunicación laboral en línea — cada comentario es comunicación, no solo metadata.
 
-Para IDs específicos (states, labels, projects) y referencia de tools: `~/Code/_vault/_work/apprecio/_shared/linear-config.md`. Alternativa: usar tools nativos del MCP de Linear (`list_issue_statuses`, `list_issue_labels`, etc.) para datos frescos.
+Para IDs específicos (teams, states, labels) y referencia de tools: `~/Code/_vault/_work/apprecio/_shared/linear-config.md`. Alternativa: usar tools nativos del MCP de Linear (`list_teams`, `list_issue_statuses`, `list_issue_labels`, etc.) para datos frescos.
 
 ## Antes de publicar comentario en Linear (`mcp__linear__save_comment`)
 Verificar siempre:
