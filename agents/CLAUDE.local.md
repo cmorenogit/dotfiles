@@ -1,16 +1,21 @@
 # Claude Code — Configuración local
 
-## Entorno
+> Este archivo complementa el AGENTS.md universal. Las políticas generales (cuándo persistir, qué no guardar, etc.) viven ahí; acá vive solo lo específico de Claude Code.
 
-- Claude Code CLI con plugins `engram` (memory persistente) + `worktrunk` (worktrees)
-- Memory global modular en `~/.claude/memory/` (índice: `MEMORY.md`)
-- Detalle + mapping cwd→`project` para vault: `~/.claude/memory/policy_vault_first.md`
+## Entorno
+- Plugins activos: `engram` (memoria persistente) + `worktrunk` (worktrees)
+- Claude Code solo carga lo que está referenciado vía `@import` en `~/.claude/CLAUDE.md`. **No hay carga automática** de `~/.claude/memory/` ni hooks que lo inyecten.
+
+## Información organizacional de Apprecio
+Roster de equipo, mapping de proyectos, configs de Linear/JIRA y procesos detallados viven en el vault: `~/Code/_vault/_work/apprecio/_shared/`. Buscar ahí cuando se necesite contexto profundo de Apprecio que no esté en el AGENTS.md universal.
+
+Lo crítico (resumen de equipo, mapping cwd→vault, regla wrappers multi-repo, flujo FSV resumido, setup Linear/JIRA, reglas de Beads) ya vive en AGENTS.md universal.
 
 ---
 
-## Engram — Memoria Persistente (protocolo de uso)
+## Engram — implementación en Claude Code
 
-Engram provee memoria que sobrevive entre sesiones y compactaciones. En Claude Code está disponible vía skill `engram:memory` (always active) + tools MCP.
+Engram provee memoria persistente cross-session via skill `engram:memory` (always active) + tools MCP. Para el **principio y reglas generales** ver "Memoria persistente y aprendizajes" en AGENTS.md.
 
 ### Tools core (siempre disponibles, sin ToolSearch)
 `mem_save`, `mem_search`, `mem_context`, `mem_session_summary`, `mem_get_observation`, `mem_save_prompt`, `mem_current_project`
@@ -18,27 +23,15 @@ Engram provee memoria que sobrevive entre sesiones y compactaciones. En Claude C
 ### Tools deferidos (vía ToolSearch cuando se necesiten)
 `mem_update`, `mem_suggest_topic_key`, `mem_session_start`, `mem_session_end`, `mem_stats`, `mem_delete`, `mem_timeline`, `mem_capture_passive`, `mem_merge_projects`
 
-### Cuándo guardar (mem_save proactivo, no esperar a que pidan)
-- Decisión tomada (arquitectura, convención, workflow, tool choice)
-- Bug arreglado (incluir root cause)
-- Convención/workflow documentado o actualizado
-- Notion/Jira/Linear/GitHub artefacto creado con contenido significativo
-- Descubrimiento no obvio, gotcha, edge case
-- Patrón establecido (naming, estructura, approach)
-- Preferencia/restricción del usuario aprendida
-- Feature implementada con approach no obvio
-- Usuario confirma recomendación ("dale", "go with that", "sí esa")
-- Usuario rechaza approach o expresa preferencia
+### Self-check después de cada task
+"¿Hubo decisión, confirmación, preferencia, fix, aprendizaje o convención? Si sí → `mem_save` AHORA."
 
-**Self-check después de cada task:** "¿Hubo decisión, confirmación, preferencia, fix, aprendizaje o convención? Si sí → mem_save AHORA."
-
-### Cuándo buscar (mem_search)
+### Cuándo buscar (`mem_search`)
 - Usuario pide recall ("acordate", "qué hicimos", "remember")
 - Empezar trabajo que pudo haberse hecho antes
-- Usuario menciona tema sin contexto previo
-- PRIMER mensaje del usuario referenciando proyecto/feature/problema → buscar con keywords antes de responder
+- Primer mensaje del usuario referenciando proyecto/feature/problema → buscar con keywords antes de responder
 
-### Cierre de sesión (obligatorio antes de decir "listo"/"done")
+### Cierre de sesión (obligatorio antes de decir "listo")
 Llamar `mem_session_summary` con: Goal, Discoveries, Accomplished, Next Steps, Relevant Files.
 
 ### Conflict surfacing
@@ -47,12 +40,10 @@ Después de cada `mem_save`, revisar la respuesta. Si `judgment_required` es tru
 - **Preguntar al usuario** si: confidence < 0.7, O si la relación es `supersedes`/`conflicts_with` y el tipo es architecture/policy/decision.
 - **Resolver silenciosamente** si: confidence >= 0.7 AND la relación no es supersedes/conflicts_with, O la relación es `related`/`compatible`/`scoped`/`not_conflict`.
 
-### Qué NO guardar
-- Patrones/convenciones/arquitectura derivables del código actual
-- Git history o quién cambió qué (`git log` es la fuente)
-- Soluciones de debugging (la fix está en el código + commit message)
-- Cosas ya documentadas en AGENTS.md o CLAUDE.md
-- Detalles efímeros de tarea en curso
+### PRDs en SDD pipeline (doble storage)
+- **Engram** (cache para SDD): `mem_save(topic_key: "sdd/{change}/prd")`
+- **Vault** (canonical): `_work/apprecio/projects/{slug}/prds/{change}-v{N}.md`
+- Si difieren → vault es source of truth. Engram se reconstruye desde vault.
 
 ---
 
