@@ -15,3 +15,6 @@ tooling/opencode/secrets.local
 # Local overlays per machine
 **/*.local
 **/*.local.*
+
+# Excepcion: configuracion por CLI (compartible entre maquinas, no es secret)
+!agents/*.local.md
