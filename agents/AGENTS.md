@@ -203,7 +203,7 @@ Si el push falla, resolver y reintentar — no dejarlo a medias.
 
 # Linear (aplica si MCP disponible)
 
-- **Linear** — sistema oficial Apprecio para issue tracking. Workspace: `https://linear.app/apprecio-producto`. Dividido en 4 teams: `RYR` (R&R / Fuerza / SL / Engagement), `App` (mobile), `Platform` (infra / core / soporte), `Product Planning` (discovery, shaping). Es el canal principal de comunicación laboral en línea — cada comentario es comunicación, no solo metadata.
+- **Linear** — sistema oficial Apprecio para issue tracking. Workspace: `https://linear.app/apprecio-producto`. Dividido en 4 teams: `RYR` (R&R), `App` (mobile), `Platform` (Fuerza / SL / Engagement; infra / core / soporte), `Product Planning` (discovery, shaping). Es el canal principal de comunicación laboral en línea — cada comentario es comunicación, no solo metadata.
 
 Para IDs específicos (teams, states, labels) y referencia de tools: `~/Code/_vault/_work/apprecio/_shared/linear-config.md`. Alternativa: usar tools nativos del MCP de Linear (`list_teams`, `list_issue_statuses`, `list_issue_labels`, etc.) para datos frescos.
 
