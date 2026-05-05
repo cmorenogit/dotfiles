@@ -17,4 +17,4 @@ tooling/opencode/secrets.local
 **/*.local.*
 
 # Excepcion: configuracion por CLI (compartible entre maquinas, no es secret)
-!agents/*.local.md
+!ai/_shared/*.local.md
