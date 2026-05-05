@@ -24,28 +24,15 @@
   {
     "context": "Workspace",
     "bindings": {
-      "ctrl-cmd-o": null
-    }
-  },
-  {
-    "context": "Workspace",
-    "bindings": {
+      "ctrl-cmd-o": null,
       "alt-cmd-o": null
     }
   },
   {
     "bindings": {
-      "alt-cmd-i": null
-    }
-  },
-  {
-    "context": "Workspace",
-    "bindings": {
       "alt-cmd-i": [
         "projects::OpenRecent",
-        {
-          "create_new_window": false
-        }
+        { "create_new_window": false }
       ]
     }
   },
