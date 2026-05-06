@@ -25,7 +25,7 @@
   ],
   "git_panel": {
     "dock": "right",
-    "tree_view": true,
+    "tree_view": false,
   },
   "icon_theme": "Material Icon Theme",
   "features": {
