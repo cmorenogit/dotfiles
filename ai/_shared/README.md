@@ -1,6 +1,6 @@
 # ai/_shared/ — config global agnóstica para CLIs de IA
 
-Source of truth único para Claude Code, OpenCode y Pi. Cada CLI consume el contenido desde su path canónico vía symlink (XDG-first) o `@import` (Claude).
+Source of truth único para Claude Code, OpenCode y Pi. Cada CLI consume estos `.md` vía symlink (apuntando directo aquí) o `@import` (Claude vía path XDG).
 
 ## Archivos
 
@@ -13,31 +13,19 @@ Source of truth único para Claude Code, OpenCode y Pi. Cada CLI consume el cont
 
 ## Setup en máquina nueva
 
-Después de clonar dotfiles, crear los symlinks:
+Los symlinks los crea dotly automáticamente al aplicar `~/.dotfiles/symlinks/conf.yaml`. No hay pasos manuales. Lo que se crea:
 
-```bash
-# Path canónico XDG (apunta al dir versionado)
-ln -sfn ~/.dotfiles/ai/_shared ~/.config/agents
-
-# OpenCode lee su AGENTS.md global
-mkdir -p ~/.config/opencode
-ln -sfn ~/.config/agents/AGENTS.md ~/.config/opencode/AGENTS.md
-
-# Pi lee su AGENTS.md global
-mkdir -p ~/.pi/agent
-ln -sfn ~/.config/agents/AGENTS.md ~/.pi/agent/AGENTS.md
-
-# Claude Code: archivo regular con imports (no symlink, ~/.claude/ no se versiona)
-cat > ~/.claude/CLAUDE.md << 'EOF'
-@~/.config/agents/AGENTS.md
-@~/.config/agents/CLAUDE.local.md
-EOF
-```
+| Symlink | Apunta a |
+|---|---|
+| `~/.config/agents` (path canónico XDG) | `~/.dotfiles/ai/_shared` |
+| `~/.config/opencode/AGENTS.md` | `~/.dotfiles/ai/_shared/AGENTS.md` |
+| `~/.pi/agent/AGENTS.md` | `~/.dotfiles/ai/_shared/AGENTS.md` |
+| `~/.claude/CLAUDE.md` | `~/.dotfiles/ai/claude/CLAUDE.md` (contiene los `@import`) |
 
 ## Diseño
 
-- **XDG-first:** `~/.config/agents/` es el path canónico que aparece en imports y symlinks. Compatible con la propuesta del issue #91 de `agents.md` para auto-discovery futuro.
-- **Source en dotfiles:** los `.md` viven en `~/.dotfiles/ai/_shared/`. `~/.config/agents` es symlink hacia ahí. Si se cambia el gestor de dotfiles (dotly → stow → yadm), solo se reapunta ese symlink — los CLIs no se enteran.
+- **Path canónico XDG para Claude:** `~/.config/agents/` aparece en los `@import` de `~/.claude/CLAUDE.md`. Compatible con la propuesta del issue #91 de `agents.md` para auto-discovery futuro.
+- **OpenCode y Pi van directo:** sus `AGENTS.md` apuntan directamente a `ai/_shared/AGENTS.md` (un salto, sin pasar por XDG). Es más robusto a orden de creación y consistente con el patrón `editors/zed`, `terminal/tmux` del repo.
 - **Solo Claude soporta `@import`.** OpenCode y Pi leen un solo archivo plano. Por eso los `.local.md` de OpenCode/Pi están versionados pero no se inyectan automáticamente. Mecanismo de inyección (concat o script) pendiente.
 - **Engram fuera del universal:** requiere config manual por CLI (plugin en Claude, MCP en `opencode.json`). Vive duplicado en `CLAUDE.local.md` y `OPENCODE.local.md`.
 

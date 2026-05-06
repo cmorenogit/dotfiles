@@ -18,3 +18,14 @@
     ~/.zshrc: shell/zsh/.zshrc
     ~/.inputrc: shell/.inputrc
     ~/.gitconfig: shell/.gitconfig
+    # AI CLIs — shared (cross-CLI instructions via XDG)
+    ~/.config/agents: ai/_shared
+    ~/.pi/agent/AGENTS.md: ai/_shared/AGENTS.md
+    ~/.config/opencode/AGENTS.md: ai/_shared/AGENTS.md
+    # AI CLIs — Claude Code config
+    ~/.claude/CLAUDE.md: ai/claude/CLAUDE.md
+    ~/.claude/settings.json: ai/claude/settings.json
+    ~/.claude/keybindings.json: ai/claude/keybindings.json
+    ~/.claude/skills: ai/claude/skills
+    ~/.claude/hooks: ai/claude/hooks
+    ~/.claude/scripts: ai/claude/scripts
