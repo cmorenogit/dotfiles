@@ -41,3 +41,6 @@ eval "$(wt config shell init zsh)"
 # Atuin - prueba temporal con Ctrl+G (Ctrl+R sigue siendo fzf)
 eval "$(atuin init zsh --disable-up-arrow --disable-ctrl-r)"
 bindkey '^G' atuin-search
+
+# opencode
+export PATH="$HOME/.opencode/bin:$PATH"
