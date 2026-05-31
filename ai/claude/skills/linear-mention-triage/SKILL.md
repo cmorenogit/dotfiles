@@ -37,13 +37,19 @@ If these aren't directly callable, load their schemas via ToolSearch first:
 `select:mcp__pm-agents-remote__search_linear_issues,mcp__pm-agents-remote__read_linear_issue`,
 and `select:mcp__pm-agents-remote__grep_repo,mcp__pm-agents-remote__read_repo_file,mcp__pm-agents-remote__list_repo_files,mcp__pm-agents-remote__list_product_repos`.
 
-### Code access (Pass 2) — TWO layers, don't stop at the first
+### Code access (Pass 2) — THREE layers, in this order
 
-1. **pm-agents `grep_repo`/`read_repo_file`** work ONLY on its pre-configured repos: `app`, `backend`, `force-manager`, `pulse` (list with `list_product_repos`).
-2. **Any OTHER repo** — most importantly the R&R app frontend `ivaldovinos-app/ryr-39255` — is reachable with the **`gh` CLI** via Bash (authenticated, `repo` scope). **NEVER conclude "I can't access the code" just because it isn't a pm-agents repo.**
-   - Find it: `gh search repos <name>` / `gh repo list <owner>`.
-   - Read it: `gh repo clone <owner>/<repo> /tmp/<repo> -- --depth 1`, then `grep`/`sed` locally (fast, low tokens).
-   - Regression origin / history: `gh api "repos/<owner>/<repo>/commits?path=<file>" --jq '.[] | "\(.commit.author.date[:10]) \(.sha[:8]) \(.commit.message|split("\n")[0])"'`, or clone with history and `git log -S "<string>"` (pickaxe) to find when a field/string was introduced.
+1. **LOCAL clones (preferred — second opinion + cross-branch, READ-ONLY).** César keeps both R&R repos cloned under `~/Code/work/rr-project/`:
+   - Frontend (`ivaldovinos-app/ryr-39255`): base clone `app-rr-cesar` (main); there may also be per-branch clones `app-rr-cesar.<feature>`.
+   - Backend (`ivaldovinos-app/apprecio-pulse`): base clone `back-pulse-cesar` (main); same per-branch variants.
+   - If a path differs, discover it: `find ~/Code/work/rr-project -maxdepth 2 -name .git`, then match origin with `git -C <dir> remote get-url origin`.
+   - Use the **base** clone and read ANY branch WITHOUT checkout (full history, not shallow):
+     - `git -C <base> fetch -q` (refreshes `origin/*`; does NOT touch the working tree)
+     - `git -C <base> grep -n '<pattern>' <ref>` (ref = `origin/main` by default, or the PR's branch)
+     - history / pickaxe: `git -C <base> log -S '<string>' -- <file>`, `git -C <base> log --oneline -- <file>`, `git -C <base> show <ref>:<file>`
+   - **READ-ONLY, non-negotiable:** NEVER `checkout` / `pull` / `merge` / `reset` in his repos, and don't touch the `.<feature>` clones — the base clone + `git grep <ref>` already sees every branch.
+2. **pm-agents `grep_repo`/`read_repo_file`** — works on its pre-configured repos: `app`, `backend`, `force-manager`, `pulse` (list with `list_product_repos`). Primary for `pulse`; also the **second opinion** to cross-check the local read — if they diverge, it's a different branch/state, so surface it. `ryr-39255` is NOT a pm-agents repo (admin-only `add_product_repo`; role `tl` is forbidden).
+3. **`gh` CLI (fallback)** — only if no local clone exists. `gh repo clone <owner>/<repo> /tmp/<repo> -- --depth 50`, then `grep`/`sed` locally; history via `gh api "repos/<owner>/<repo>/commits?path=<file>"`. **NEVER conclude "I can't access the code."**
 
 ## Inputs
 
@@ -98,7 +104,7 @@ Goal: confirm or correct each `[inferido]` claim against the REAL code, end-to-e
 
 1. `read_linear_issue(<ISSUE-ID>, comment_limit=<N>)` for full context — description + bounded comment thread in one call (native `get_issue` + `list_comments` is the fallback).
 2. **Trace the LIVE path end-to-end — don't stop at one layer:** rendered component → hook/service → endpoint → backend handler → the exact field/computation. The bug usually lives where the contract diverges between two of these.
-3. **Read the actual code:** `pulse` via pm-agents `grep_repo`/`read_repo_file` (**don't use `glob`** — unreliable; search without it, read by path). For the **R&R app frontend**, clone `ivaldovinos-app/ryr-39255` with `gh` and grep locally (NOT in pm-agents).
+3. **Read the actual code (see Code access — THREE layers):** prefer the **local clones** in READ-ONLY mode — `back-pulse-cesar` (backend) and `app-rr-cesar` (app frontend) under `~/Code/work/rr-project/`; `git -C <base> grep -n '<pattern>' <ref>` reads any branch without checkout. Use **pm-agents** `grep_repo`/`read_repo_file` for `pulse` as primary AND as a **second-opinion cross-check** (**don't use `glob`** — search without it, read by path). `gh clone` is the fallback only when no local clone exists. NEVER mutate César's working tree (no `checkout`/`pull`).
 4. **Anti-hallucination guards (hard-won — honor them):**
    - **Confirm the component is actually rendered** before reasoning about it — `grep` its usage. Dead/orphaned code (zero references) is a classic wrong turn.
    - **Follow the EXACT field the UI reads**, not a similarly-named one (e.g. UI reads `my_current`, not `current`).
@@ -188,7 +194,8 @@ _teams: RYR,PLA,APP · ventana {N}d · {X} issues escaneados · {Y} menciones pe
 - **Pass 1 cost:** prefer pm-agents `search_linear_issues` (lean table) for enumeration and `read_linear_issue(comment_limit=N)` for per-issue context — reserve `list_issues` only to resolve the `--since` window. `search_linear_issues` filters by state, not `updatedAt`, so it doesn't honor `--since` on its own.
 - **Fix-calibration gate (feature flags):** never recommend "seed a flag" without `grep_repo(pulse, '<flag>')` first — 0 matches means it's not a backend flag and the fix is to remove the frontend gate, not seed. Seed / tenant-override / remove-gate are mutually exclusive (Pass 2 §5).
 - **`grep_repo` `glob` is unreliable** — search without it, then read by path.
-- **Code beyond pm-agents' 4 repos** (esp. the R&R app `ivaldovinos-app/ryr-39255`) → use the `gh` CLI; don't say "inaccessible".
+- **Code beyond pm-agents' 4 repos** (esp. the R&R app `ivaldovinos-app/ryr-39255`) → prefer the LOCAL clones under `~/Code/work/rr-project/` (`app-rr-cesar` front, `back-pulse-cesar` back) in READ-ONLY mode (`git grep <ref>` reads any branch without checkout); `gh` CLI is the fallback. Don't say "inaccessible". Registering `ryr-39255` in pm-agents via `add_product_repo` is admin-only (role `tl` is forbidden).
+- **Local clones are READ-ONLY for the skill:** `fetch` / `git grep <ref>` / `log` / `show` only — NEVER `checkout` / `pull` / `merge` / `reset` (don't disturb César's working tree or in-progress branches). Use the base clone + `git grep <ref>` to see any branch; leave the `.<feature>` clones untouched.
 - **Dead-code trap:** before basing an analysis on a component, confirm it's actually imported/rendered (`grep` its usage).
 - **Large threads** (e.g. governance comments) can blow the token budget — bound `list_comments`, summarize, never load full code in Pass 1; consider a sub-agent + verify its output.
 - **Storage is vault-only.** Do **not** write to engram from this skill.
