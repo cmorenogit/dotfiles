@@ -67,13 +67,15 @@ and `select:mcp__pm-agents-remote__grep_repo,mcp__pm-agents-remote__read_repo_fi
 Linear has **no** "mentions-of-me" / inbox endpoint, so detection is a bounded scan:
 
 1. For each team, enumerate candidates with pm-agents `search_linear_issues(team_key=<KEY>, limit=200)` — a **lean table** (identifier/title/state/priority/assignee/labels, NO descriptions), avoiding the ~70k-token blowup of `list_issues`. **Caveat:** `search_linear_issues` filters by state, **not** `updatedAt`, so it does NOT honor `--since <Nd>` on its own. To respect the window, keep one `list_issues(team, updatedAt="-P{N}D")` call parsed for **lean fields only** (id/identifier/title/updatedAt — never full descriptions) to get the in-window id set, or post-filter candidates by each one's `updatedAt`.
-2. For each in-window issue, read it with `read_linear_issue(<IDENTIFIER>, comment_limit=<N>)` — one call returns description + a bounded comment thread (replaces `get_issue` + `list_comments`). Then detect the mention on the returned bodies:
-   - **Description mention:** check the description for the tag `<user id="6a1e659a-ca3d-417f-b460-b62307d9354d">` — match by **UUID** (the handle text is unreliable in descriptions).
-   - **Comment mentions:** scan each comment body for `@cmoreno` using **word-boundary** matching (so `@cmoreno2` or substrings don't false-match). `read_linear_issue` gives structured context, not the mention filter — the scan still runs here.
+2. For each in-window issue, read it with `read_linear_issue(<IDENTIFIER>, comment_limit=<N>)` — one call returns description + a bounded comment thread (replaces `get_issue` + `list_comments`). Then detect the mention on the returned bodies, with **THREE patterns** (a mention can use any one):
+   - **Description tag:** `<user id="6a1e659a-ca3d-417f-b460-b62307d9354d">` — match by **UUID** (the handle text is unreliable in descriptions).
+   - **Comment @-mention:** `@cmoreno` in any comment body, **word-boundary** matched (so `@cmoreno2`/substrings don't false-match).
+   - **Display-name in prose:** `@Cesar` / `Cesar` / `César` referenced in prose (description OR comments) WITHOUT the `@cmoreno` handle or UUID tag — match `C[eé]sar` word-boundary. This is a real recurring pattern the handle/UUID scan MISSES (e.g. "lo resolverá junto con Cesar", "@Nicole y @Cesar los apoyarán" — found invisible on RYR-87/RYR-88). **Dedupe** against the handle/UUID hits. These are usually prose name-drops → most land in `INFORMATIVO`, but they must be **seen**, not invisible.
 3. **Pending filter:** a mention is *pending* if it appears AND there is **no** comment in that issue authored by `6a1e659a-…` (`author.id`) created **after** the mention. (Issue-level resolution for v1 — if César commented anywhere later in the issue, treat as handled.)
 4. **Cost control & scaling:**
    - Prefer `search_linear_issues` (lean table) for enumeration; reserve `list_issues` only to resolve the `--since` window, and even then extract only lean fields (id, title, updatedAt, identifier) — its **full descriptions** blow the token budget (≈70k chars for ~50 issues). If a result is dumped to a file, parse that file for lean fields instead of reading it raw.
    - Bound `read_linear_issue` with `comment_limit`; only read in-window issues. **Never read code in Pass 1.** Summarize huge threads; don't load everything.
+   - **Long threads silently truncate.** Threads with ~80+ comments / >90k chars (e.g. APP-17, APP-12) exceed `read_linear_issue`'s token limit and get cut — a mid-thread mention can be lost. For those: run the scan in a **sub-agent** and/or page comments (lowest `comment_limit` that still reaches the latest activity); don't trust a single truncated read.
    - For a busy team (many issues/window), run the comment-scan in a **sub-agent** that returns ONLY the pending matches (keeps the main context clean). **Then VERIFY the sub-agent's output** — re-pull each flagged issue's comments before reporting; sub-agents can produce false positives (one invented a pending mention this skill had to discard).
 
 ### 2. Classify each pending mention (lane gate)
@@ -224,7 +226,7 @@ _teams: RYR,PLA,APP · ventana {N}d · {X} issues escaneados · {Y} menciones pe
 
 ## Notes / gotchas
 
-- **Mention encoding differs:** comment bodies use plain `@cmoreno`; issue descriptions use `<user id="UUID">`. Match the UUID in descriptions.
+- **Mention encoding differs (THREE patterns):** comment bodies use plain `@cmoreno` (word-boundary); descriptions use `<user id="UUID">` (match the UUID); and **prose can name `Cesar`/`César` by display-name with no handle/tag** — scan `C[eé]sar` too (dedupe vs the handle/UUID hits), or those mentions stay invisible (real gap found on RYR-87/RYR-88).
 - **`list_issues` returns full descriptions** → can exceed the token limit (~70k for 50 issues). Parse for lean fields only; if dumped to a file, slice/grep the file.
 - **Pass 1 cost:** prefer pm-agents `search_linear_issues` (lean table) for enumeration and `read_linear_issue(comment_limit=N)` for per-issue context — reserve `list_issues` only to resolve the `--since` window. `search_linear_issues` filters by state, not `updatedAt`, so it doesn't honor `--since` on its own.
 - **Fix-calibration gate (feature flags):** never recommend "seed a flag" without `grep_repo(pulse, '<flag>')` first — 0 matches means it's not a backend flag and the fix is to remove the frontend gate, not seed. Seed / tenant-override / remove-gate are mutually exclusive (Pass 2 §5).
