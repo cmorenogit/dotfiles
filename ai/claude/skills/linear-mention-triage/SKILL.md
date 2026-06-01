@@ -102,6 +102,15 @@ Write to the digest path (am/pm by local time, one file per run — don't overwr
 
 Goal: confirm or correct each `[inferido]` claim against the REAL code, end-to-end.
 
+**0. Analysis cache — recover before re-analyzing (don't re-trace from scratch).** Check `~/Code/_vault/_work/apprecio/triage/issues/<ISSUE-ID>.md`:
+   - **No file** → full analysis (steps 1-7), then write the cache (step 8).
+   - **File exists** → read it + `read_linear_issue(<ISSUE-ID>)`, then compare fingerprints:
+     - Issue fingerprint (`last_comment_id` + `comments_count`) unchanged **AND** every `code_ref`'s `sha` unchanged → **return the cached analysis** ("sin cambios desde {last_analyzed}"). Don't re-trace.
+     - **New comments** since `last_comment_id` → analyze ONLY the delta, using the cached diagnosis as context.
+     - A new comment **contradicts** the cached diagnosis → re-analyze that part, flag the change.
+     - A `code_ref`'s `sha` changed (`git -C <base> log -1 --format=%H <ref> -- <file>`) → re-verify ONLY those refs.
+   - **The cache never overrides the code:** a hit returns the prior analysis only when BOTH fingerprints match; any mismatch → re-verify that part. The cache saves work, it never invents certainty.
+
 1. `read_linear_issue(<ISSUE-ID>, comment_limit=<N>)` for full context — description + bounded comment thread in one call (native `get_issue` + `list_comments` is the fallback).
 2. **Trace the LIVE path end-to-end — don't stop at one layer:** rendered component → hook/service → endpoint → backend handler → the exact field/computation. The bug usually lives where the contract diverges between two of these.
 3. **Read the actual code (see Code access — THREE layers):** prefer the **local clones** in READ-ONLY mode — `back-pulse-cesar` (backend) and `app-rr-cesar` (app frontend) under `~/Code/work/rr-project/`; `git -C <base> grep -n '<pattern>' <ref>` reads any branch without checkout. Use **pm-agents** `grep_repo`/`read_repo_file` for `pulse` as primary AND as a **second-opinion cross-check** (**don't use `glob`** — search without it, read by path). `gh clone` is the fallback only when no local clone exists. NEVER mutate César's working tree (no `checkout`/`pull`).
@@ -121,6 +130,30 @@ Goal: confirm or correct each `[inferido]` claim against the REAL code, end-to-e
    - **Hard check before recommending "seed `<flag>`":** run `grep_repo(pulse, '<flag_key>')`. **0 matches → the seed recommendation is FORBIDDEN** (seeding a flag that doesn't exist in the backend sends Support chasing a ghost — the worst failure mode). Instead, **NAME the positive fix**: the gate lives only in the frontend, so the remedy is to REMOVE it there — grep the frontend repo (and its recent PRs) to point at the exact gate to delete. Don't settle for "check it at runtime".
 6. Upgrade each claim to `[verificado: file:línea]` or correct it. **If you can't reach the code that decides it, say so and give the decisive runtime/DB check — do NOT publish a root cause you only inferred.**
 7. Refine that one draft so it's safe to post (file:line accurate, no remaining `[inferido]`).
+8. **Update the analysis cache.** Write/refresh `~/Code/_vault/_work/apprecio/triage/issues/<ISSUE-ID>.md` with the current fingerprints + diagnosis (format below), then commit it (the git history IS the "what we answered / what happened" trail). On a delta run, supersede only the parts whose fingerprint changed; don't discard the prior analysis.
+
+### Analysis cache format
+
+One file per issue at `~/Code/_vault/_work/apprecio/triage/issues/<ISSUE-ID>.md` (separate from the dated digests in `triage/linear/`). The fingerprints are how step 0 decides cache-hit vs re-analyze:
+
+```markdown
+---
+issue: RYR-89
+last_analyzed: 2026-05-30
+issue_fingerprint: { last_comment_id: <id>, comments_count: 7 }   # changed → new comments to analyze
+code_fingerprint:                                                 # changed sha → re-verify that ref
+  - { ref: "apprecio-pulse@origin/main:supabase/functions/challenge-api/services/scorecard.service.ts", sha: "219c785" }
+status: pendiente-bd        # | respondido | resuelto
+verdict: "one-line root cause"
+---
+## Qué ocurre        (root cause + verified code_refs)
+## Qué debe lograr    (fix + coverage)
+## Qué se respondió   (what César posted + when — fill when known)
+## Pendiente          (what still needs DB/runtime verification)
+```
+
+- **Code fingerprint** uses the local clone (Code access layer 1): `git -C <base> log -1 --format=%H <ref> -- <file>` is the **full 40-char sha** of the last commit touching that file on that ref (use `%H`, never the abbreviated `%h` — variable abbreviation length can cause false mismatches). Different sha → the verified line may have moved → re-verify before trusting the cached claim.
+- **Pass 1 hook (future, not implemented):** the same fingerprint mechanism could let the triage scan skip unchanged issues; today Pass 1 still re-scans each run.
 
 ---
 
@@ -154,6 +187,8 @@ Surface **OPTIONAL proactive opportunities**: open, technical asks directed at s
 - No hedging ("el code review debería confirmar…").
 - No spelling out assumed next steps ("el paso a QA queda en tu cancha").
 - Lead with the verdict; then precise evidence. Answer what's asked, nothing more.
+
+**Product alignment (Ignacio's lens).** Before finalizing any draft, consult `~/Code/_vault/_work/apprecio/_shared/ignacio-product-profile.md` and orient the draft toward what Ignacio (Jefe de Producto) prioritizes: lead with the business **outcome/metric** (not just the technical detail); make **QA state + next step + named owner** explicit; **root-cause, not patch**; **never propose removing a defense** (tenant predicate, RLS); prefer **centralizing cross-cutting concerns in the canonical RPC** over per-module patches; **`observe` before `enforce`** for rollouts. This is to **ALIGN** with his product lens — **NEVER to simulate him, speak for him, or attribute words to him.**
 
 **Rigor (anti-hallucination).** Never assert a code fact from comments alone — tag `[inferido]` until confirmed `[verificado: file:línea]`. Never assert a **root cause** until the live path is traced end-to-end (the component is actually mounted, the exact consumed field, its endpoint, its backend computation/RPC — confirmed the latest definition). Ruling out one layer ≠ proving another. **A confident-but-wrong verdict is worse than "not 100% yet — here's the decisive check."** A draft with `[inferido]` code claims must not be posted as-is. **Never propose a fix without calibrating it per affected entity:** for feature flags, run the Fix-calibration gate (Pass 2 §5) — seed / tenant-override / remove-frontend-gate are mutually exclusive, and `grep_repo(pulse, '<flag>')` = 0 forbids any seed recommendation.
 
@@ -198,5 +233,5 @@ _teams: RYR,PLA,APP · ventana {N}d · {X} issues escaneados · {Y} menciones pe
 - **Local clones are READ-ONLY for the skill:** `fetch` / `git grep <ref>` / `log` / `show` only — NEVER `checkout` / `pull` / `merge` / `reset` (don't disturb César's working tree or in-progress branches). Use the base clone + `git grep <ref>` to see any branch; leave the `.<feature>` clones untouched.
 - **Dead-code trap:** before basing an analysis on a component, confirm it's actually imported/rendered (`grep` its usage).
 - **Large threads** (e.g. governance comments) can blow the token budget — bound `list_comments`, summarize, never load full code in Pass 1; consider a sub-agent + verify its output.
-- **Storage is vault-only.** Do **not** write to engram from this skill.
+- **Storage is vault-only.** Do **not** write to engram from this skill. The per-issue **analysis cache** (`triage/issues/<ISSUE-ID>.md`) is vault-only too — chosen over engram because recovery is by exact key (the ISSUE-ID) + fingerprint diff, not semantic search, and it must work in headless/cron runs where the engram MCP may be absent.
 - **Never post to Linear.** The skill drafts; César reviews and posts.
