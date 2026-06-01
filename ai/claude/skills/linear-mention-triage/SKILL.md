@@ -66,6 +66,12 @@ and `select:mcp__pm-agents-remote__grep_repo,mcp__pm-agents-remote__read_repo_fi
 
 Linear has **no** "mentions-of-me" / inbox endpoint, so detection is a bounded scan:
 
+**0. Scan cache — skip unchanged issues (don't re-classify the whole board).** Read `~/Code/_vault/_work/apprecio/triage/scan-index.md` if it exists (format under §4). It holds, per issue last scanned, an `updatedAt` + `last_comment_id` fingerprint and its resulting classification. As you enumerate (step 1), compare each in-window issue's current `updatedAt` against the index:
+   - **Not in the index, OR `updatedAt` changed AND `last_comment_id` changed** → a comment moved → re-process fully (steps 2-3).
+   - **`updatedAt` changed but `last_comment_id` did NOT** → the move was a field/state change (e.g. a mass "Blocked"), not a new comment → the mention classification still holds → reuse the cached entry, just refresh `updatedAt` (don't read comments).
+   - **`updatedAt` unchanged** → reuse the cached classification; don't read its comments at all.
+   Only re-process issues that actually moved. **Never serve a stale classification:** any fingerprint change → re-process that issue. Refresh the index at the end (§4).
+
 1. For each team, enumerate candidates with pm-agents `search_linear_issues(team_key=<KEY>, limit=200)` — a **lean table** (identifier/title/state/priority/assignee/labels, NO descriptions), avoiding the ~70k-token blowup of `list_issues`. **Caveat:** `search_linear_issues` filters by state, **not** `updatedAt`, so it does NOT honor `--since <Nd>` on its own. To respect the window, keep one `list_issues(team, updatedAt="-P{N}D")` call parsed for **lean fields only** (id/identifier/title/updatedAt — never full descriptions) to get the in-window id set, or post-filter candidates by each one's `updatedAt`.
 2. For each in-window issue, read it with `read_linear_issue(<IDENTIFIER>, comment_limit=<N>)` — one call returns description + a bounded comment thread (replaces `get_issue` + `list_comments`). Then detect the mention on the returned bodies, with **THREE patterns** (a mention can use any one):
    - **Description tag:** `<user id="6a1e659a-ca3d-417f-b460-b62307d9354d">` — match by **UUID** (the handle text is unreliable in descriptions).
@@ -97,6 +103,20 @@ For each, produce:
 ### 4. Write the digest
 
 Write to the digest path (am/pm by local time, one file per run — don't overwrite). Mark mentions that appeared in a prior digest and are still pending as **"viene de antes"**.
+
+**Update the scan-index** (`~/Code/_vault/_work/apprecio/triage/scan-index.md`) so the next run can skip unchanged issues (§0). One row per in-window issue with its fingerprint + classification; commit it with the digest; drop rows whose issue fell out of the window. Vault-only (same rationale as the Pass 2 cache).
+
+```markdown
+---
+last_scan: 2026-06-01
+window: 7d
+teams: RYR,PLA,APP
+---
+| issue | updatedAt | last_comment_id | pending | classification |
+|---|---|---|---|---|
+| RYR-89 | 2026-05-29T00:11Z | 78c59aa7 | yes | requiere-respuesta |
+| RYR-87 | 2026-05-31T14:00Z | none | no | informativo |
+```
 
 ---
 
@@ -155,7 +175,7 @@ verdict: "one-line root cause"
 ```
 
 - **Code fingerprint** uses the local clone (Code access layer 1): `git -C <base> log -1 --format=%H <ref> -- <file>` is the **full 40-char sha** of the last commit touching that file on that ref (use `%H`, never the abbreviated `%h` — variable abbreviation length can cause false mismatches). Different sha → the verified line may have moved → re-verify before trusting the cached claim.
-- **Pass 1 hook (future, not implemented):** the same fingerprint mechanism could let the triage scan skip unchanged issues; today Pass 1 still re-scans each run.
+- **Pass 1 scan cache (implemented):** the same fingerprint mechanism lets the triage scan skip unchanged issues — see Pass 1 §0 (recover) + §4 Write the digest (update `scan-index.md`). Same anti-stale rule: any fingerprint change → re-process that issue.
 
 ---
 
