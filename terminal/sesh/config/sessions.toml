@@ -1,6 +1,11 @@
 # --- Named sessions ---
 
 [[session]]
-name = "profile-dev"
-path = "~/Code/personal/app-profile"
-startup_command = "source ~/.dotfiles/terminal/sesh/scripts/profile-dev.sh"
+name = "vault"
+path = "~/Code/_vault"
+startup_command = "source ~/.dotfiles/terminal/sesh/scripts/vault.sh"
+
+[[session]]
+name = "apprecio"
+path = "~/Code/_vault"
+startup_command = "source ~/.dotfiles/terminal/sesh/scripts/apprecio.sh"
