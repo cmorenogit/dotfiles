@@ -57,13 +57,16 @@ Support escalation channel. 10 human members.
 | Samuel (Alvarado?) | Soporte/Dev | 108399210587889233103 | hckCmSAAAAE |
 | Ruben (Venegas) | Core legacy Fuerza | 116324056077885622751 | oaJX9cAAAAE |
 | Stephanie (D'Angelo) | — | 114828342955466251726 | 0-K39cAAAAE |
+| Jhoan Burbano | Dev (R&R / Beat) | 114393679423221776709 | siFXRyAAAAE |
 
 ### Other Known DMs
 
 | Space ID | Contact | Notes |
 |----------|---------|-------|
-| hS3n6iAAAAE | Nicole (secondary/group) | Group DM |
+| hS3n6iAAAAE | Wilder Vera (wvera@apprecio.com) | DM 1:1 — verificado 2026-06-12 (antes mal anotado como "Nicole secondary/group") |
 | tzxNPiAAAAE | Unknown | Last msg: "Buenos dias Cesar" |
+
+> ⚠️ Antes de ENVIAR a un DM, verificar identidad leyendo 2-3 mensajes del hilo — esta tabla puede quedar desactualizada.
 
 ### Self
 
