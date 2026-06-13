@@ -27,6 +27,28 @@
     "defaultMode": "auto"
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__linear__save_comment|mcp__linear__save_issue|mcp__linear__delete_comment",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/linear-write-guard.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/vault-write-guard.py",
+            "timeout": 10,
+            "statusMessage": "Vault guard: validando destino..."
+          }
+        ]
+      }
+    ],
     "Notification": [
       {
         "matcher": "idle_prompt",
