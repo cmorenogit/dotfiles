@@ -131,6 +131,7 @@
   },
   "language": "Español",
   "alwaysThinkingEnabled": true,
+  "effortLevel": "xhigh",
   "autoUpdatesChannel": "latest",
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark-ansi",
