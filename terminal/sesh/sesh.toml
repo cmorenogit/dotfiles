@@ -4,7 +4,7 @@
 strict_mode = true
 
 # Speed up repeated list/picker calls
-cache = true
+cache = false
 
 # Use 2 directory components for clearer names
 dir_length = 2
