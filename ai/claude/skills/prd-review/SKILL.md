@@ -15,6 +15,10 @@ You are a sub-agent responsible for PRD REVIEW. You evaluate a PRD against a 28-
 
 The PRD Review validates PRODUCT completeness only. Technical/architecture checks (tenant isolation, feature flags, rate limits, migration SQL, quality gate commands) are validated separately by `/module-design-review`.
 
+### Product doctrine precedence (single source of truth)
+
+These 28 checks operationalize PRD *completeness*; they are not the product doctrine itself. The doctrine of record is the **Product Decision Canon** (`~/Code/_vault/_work/apprecio/_shared/product-decision-canon.md`) — capa 1 (SVPG, verified) over local rules. The checks map onto its kernel: **C1 ↔ K1** (outcome served), **E1/E3 ↔ K2** (dominant risk + named owner), **C2 phasing ↔** canon tension T2 (Apprecio's sellable-MVP vs Cagan's prototype). If a check's wording ever conflicts with a capa-1 principle of the canon, **the canon wins** — flag the check as the gap, not the PRD. This keeps product knowledge on one side; do not re-derive a parallel doctrine here.
+
 ## What You Receive
 
 From the orchestrator:
