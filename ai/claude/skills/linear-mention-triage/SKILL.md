@@ -1,259 +1,252 @@
 ---
 name: linear-mention-triage
 description: >
-  Triage César's pending Linear @mentions across his teams and draft in-lane replies, so he never scans Linear manually.
-  Use when the user wants to check what mentions need his response, catch up on Linear, or follow up on pending comments.
+  [DEPRECATED as standalone — prefer /linear-today, which runs this skill as its internal B1 detection
+  engine (see ~/.claude/skills/_shared/linear-contract.md).] Triage César's pending Linear @mentions
+  across his teams and draft in-lane replies. Invoke directly ONLY on explicit /linear-mention-triage.
   Triggers: "qué me menciona", "revisar mis menciones", "menciones pendientes", "triage Linear",
   "qué tengo pendiente en Linear", "ponerme al día con Linear", "/linear-mention-triage".
 ---
 
 # Linear Mention Triage
 
-Find César's **pending** Linear @mentions, classify each by whether it actually needs his
-response, and draft confident **in-lane** replies — without him scanning Linear by hand.
+Una sola pregunta: **¿qué tengo pendiente en Linear?** Encuentra las @menciones REALES de César sin
+responder, las ordena por confianza, y redacta un borrador para las claras. Una lista corta y confiable
+de un vistazo — no un documento que César tenga que volver a escanear.
 
 Global skill: works from any session/cwd. Reads Linear + (on demand) code.
 **NEVER posts to Linear** — drafts only; César posts.
+
+## Reglas rectoras (gobiernan todo lo de abajo)
+
+> **1. Leer la realidad, siempre — sin caché de skip.** Cada corrida lee fresco: para TODO issue en ventana, descripción AND comentarios en orden real. Leer es barato; omitir un ask es el peor fallo. No hay fingerprint que autorice saltarse una lectura. El `scan-index` solo recuerda **qué respondió César** (para marcar "viene de antes"); no es fuente de verdad ni veredicto.
+>
+> **2. Una mención real solo se descarta por EVIDENCIA, nunca por tono.** Ante un `@cmoreno`, un `<user id="6a1e659a-…">`, o un `Cesar/César` real sin respuesta posterior de César → es PENDIENTE. Dos únicas pruebas de descarte: (a) César comentó DESPUÉS de la mención, o (b) el match fue un falso positivo del patrón (confirmado al re-leer). "Es narrativo / atributivo / FYI" NO son pruebas — la duda baja a **🟡 decidí vos**, visible, nunca a silencio.
+>
+> **3. Cita-o-no-existe.** Todo item lleva **quote textual exacto + comment_id/source**. Si el quote no aparece byte-a-byte en su fuente → es alucinación, se descarta. Toda detección barre **descripción AND comentarios**.
+>
+> **4. Verificá contra lo ya decidido y lo ya aprendido — no reabras lo cerrado.** Antes de afirmar algo o pedir un cambio (`MUST/SHOULD FIX`, veredicto), cruzá el contenido contra (a) las **decisiones ya cerradas en el hilo** —en especial las que **el propio César ya validó**— y (b) la **memoria persistida**: `_shared` (siempre) + engram (best-effort). Un hallazgo cierto en abstracto que el equipo ya evaluó y cerró **NO es un FIX**; reabrirlo —o contradecir algo que César ya aprobó, o repetir un error ya corregido— es el **peor falso positivo** (erosiona su criterio ante el equipo). La verificación produce HECHOS; el veredicto los filtra por el contexto de decisión. Info genuinamente nueva → **pregunta/insumo citando la decisión previa**, nunca condición. (Operacionalizado en el gate §3.5 Criterio 8 + `--recheck`.)
 
 ## Identity & config (hardcoded)
 
 - **User:** displayName `cmoreno`, id `6a1e659a-ca3d-417f-b460-b62307d9354d`, email `cmoreno@dcanje.com`.
 - **Teams to scan:** Beat (`RYR`, id `ddeaea1c-b29b-45b4-82b2-6cd261c47aa5`), Platform (`PLA`), App Rewards (`APP`).
-- **Watch targets (Phase 2, `--watch`):** Ignacio = id `1f03f08d-db10-4bf2-8999-499b7842f50c` (handle `@ignacio`). Otros: resolver con `list_users`/`get_user`.
-- **Code access for verification (Pass 2):** R&R backend + backoffice = pm-agents `product_slug = "pulse"` (GitHub `ivaldovinos-app/apprecio-pulse`). The **R&R app/mobile frontend** = GitHub `ivaldovinos-app/ryr-39255`, which is **NOT** a pm-agents repo — reach it with the `gh` CLI (see Code access below). Bugs often span both (the app reads a field the backend sets), so you usually need both.
-- **Digest output:** `~/Code/_vault/_work/apprecio/triage/linear/{YYYY-MM-DD}-{am|pm}.md` (`am` if local time < 13:00, else `pm`).
-- **Output language:** Spanish (summaries + drafts). The skill's reasoning can be internal; what lands in the digest is Spanish.
+- **Watch target (`--watch`):** Ignacio = id `1f03f08d-db10-4bf2-8999-499b7842f50c` (handle `@ignacio`). Otros: resolver con `list_users`/`get_user`.
+- **Digest output:** `~/Code/_vault/_work/apprecio/linear/today/{YYYY-MM-DD}-{am|pm}.md` (`am` si hora local < 13:00, si no `pm`). Una corrida = un archivo (no sobrescribir).
+- **scan-index:** `~/Code/_vault/_work/apprecio/linear/scan-index.md` (vault-only, formato §4).
+- **Output language:** español (resúmenes + drafts). El razonamiento interno puede ser en inglés.
 
-At start, verify identity once: `get_user("me")` → confirm the id matches `6a1e659a-…`. If it differs, re-resolve before scanning.
+Al inicio, verificar identidad una vez: `get_user("me")` → confirmar que el id es `6a1e659a-…`. Si difiere, re-resolver antes de escanear.
 
-## Tools (may be deferred — load first if needed)
+## Tools (may be deferred — load via ToolSearch first if needed)
 
 - Identity: `get_user` (Linear native).
-- Detection / read (Pass 1): prefer pm-agents `search_linear_issues` (lean candidate table — no descriptions) + `read_linear_issue` (one call = description + bounded comment thread via `comment_limit`). Linear native `list_issues` / `get_issue` / `list_comments` are the fallback and the way to honor the exact `--since` window (see Pass 1 §1).
-- Code (Pass 2): pm-agents `grep_repo`, `read_repo_file`, `list_repo_files`, `list_product_repos`.
+- Enumeración: pm-agents `search_linear_issues(team_key, limit=200)` — tabla lean (identifier/title/state/priority/assignee/labels, SIN descripciones). **Caveat:** filtra por estado, NO por `updatedAt` — para respetar `--since`, una llamada `list_issues(team, updatedAt="-P{N}D")` parseada SOLO por campos lean (id/identifier/title/updatedAt) da el set en ventana.
+- **Lector primario de detección:** `list_comments(issueId, orderBy="createdAt")` consumido **newest-first**, paginado hasta `hasNextPage=false`. `read_linear_issue`/`get_issue` SOLO para la descripción — **nunca** como única fuente del "último comentario" (trunca threads largos en silencio → causó RYR-6 FP + RYR-83 FN).
 
-If these aren't directly callable, load their schemas via ToolSearch first:
-`select:mcp__linear__get_user,mcp__linear__list_issues,mcp__linear__get_issue,mcp__linear__list_comments`,
-`select:mcp__pm-agents-remote__search_linear_issues,mcp__pm-agents-remote__read_linear_issue`,
-and `select:mcp__pm-agents-remote__grep_repo,mcp__pm-agents-remote__read_repo_file,mcp__pm-agents-remote__list_repo_files,mcp__pm-agents-remote__list_product_repos`.
-
-### Code access (Pass 2) — THREE layers, in this order
-
-1. **LOCAL clones (preferred — second opinion + cross-branch, READ-ONLY).** César keeps both R&R repos cloned under `~/Code/work/rr-project/`:
-   - Frontend (`ivaldovinos-app/ryr-39255`): base clone `app-rr-cesar` (main); there may also be per-branch clones `app-rr-cesar.<feature>`.
-   - Backend (`ivaldovinos-app/apprecio-pulse`): base clone `back-pulse-cesar` (main); same per-branch variants.
-   - If a path differs, discover it: `find ~/Code/work/rr-project -maxdepth 2 -name .git`, then match origin with `git -C <dir> remote get-url origin`.
-   - Use the **base** clone and read ANY branch WITHOUT checkout (full history, not shallow):
-     - `git -C <base> fetch -q` (refreshes `origin/*`; does NOT touch the working tree)
-     - `git -C <base> grep -n '<pattern>' <ref>` (ref = `origin/main` by default, or the PR's branch)
-     - history / pickaxe: `git -C <base> log -S '<string>' -- <file>`, `git -C <base> log --oneline -- <file>`, `git -C <base> show <ref>:<file>`
-   - **READ-ONLY, non-negotiable:** NEVER `checkout` / `pull` / `merge` / `reset` in his repos, and don't touch the `.<feature>` clones — the base clone + `git grep <ref>` already sees every branch.
-2. **pm-agents `grep_repo`/`read_repo_file`** — works on its pre-configured repos: `app`, `backend`, `force-manager`, `pulse` (list with `list_product_repos`). Primary for `pulse`; also the **second opinion** to cross-check the local read — if they diverge, it's a different branch/state, so surface it. `ryr-39255` is NOT a pm-agents repo (admin-only `add_product_repo`; role `tl` is forbidden).
-3. **`gh` CLI (fallback)** — only if no local clone exists. `gh repo clone <owner>/<repo> /tmp/<repo> -- --depth 50`, then `grep`/`sed` locally; history via `gh api "repos/<owner>/<repo>/commits?path=<file>"`. **NEVER conclude "I can't access the code."**
+Schemas: `select:mcp__linear__get_user,mcp__linear__list_issues,mcp__linear__get_issue,mcp__linear__list_comments`, `select:mcp__pm-agents-remote__search_linear_issues`.
 
 ## Inputs
 
-- `--since <Nd>` — lookback window (default `7d` → Linear `updatedAt="-P7D"`).
-- `--teams <KEYS>` — comma list (default all 3: `RYR,PLA,APP`).
-- `--verify <ISSUE-ID>` — run **Pass 2** (deep code verification) for one issue instead of the full triage.
-- `--watch <person>` — run **Watch mode (Phase 2)**: surface OPTIONAL proactive opportunities on that person's mentions (default `ignacio`).
+- `--since <Nd>` — ventana (default `7d` → `updatedAt="-P7D"`).
+- `--teams <KEYS>` — coma-lista (default `RYR,PLA,APP`).
+- `--verify <ISSUE-ID>` — corre **Pass 2** (verificación profunda de código) para un issue en vez del triage completo.
+- `--watch <person>` — **Watch mode**: oportunidades proactivas OPCIONALES sobre las menciones de otra persona (default `ignacio`).
+- `--recheck <ISSUE-ID>` — **re-validación de seguridad (post-borrador)**: corre SOLO el **Criterio 8** del gate §3.5 (decisión-cerrada + memoria) sobre un borrador YA escrito o un comentario YA redactado para ese issue. Cruza el contenido contra (a) las decisiones cerradas del hilo vivo, (b) `_shared`, (c) engram (best-effort). Úsalo cuando ya hay un borrador/comentario y querés confirmar que no reabre una decisión ni contradice una corrección previa antes de publicar. **Input del borrador:** el texto presente en la conversación, o el archivo `~/Code/_vault/_work/apprecio/projects/<proyecto>/issues/<ISSUE-ID>/triage.md` si existe (proyecto por prefijo: RYR→rr; declarar cuál se usó). Devuelve **PASS** o **FAIL con la cita de la decisión que contradice**.
 
 ---
 
-## Pass 1 — Triage (default invocation)
+## Pass 1 — Triage (invocación default)
 
-### 1. Detect pending mentions (scoped scan)
+### 1. Detectar menciones (scan acotado, lectura fresca)
 
-Linear has **no** "mentions-of-me" / inbox endpoint, so detection is a bounded scan:
+Linear no tiene endpoint "mentions-of-me", así que detectar es un scan acotado. **No hay paso de caché que decida qué leer — se lee todo lo que está en ventana.**
 
-**0. Scan cache — skip unchanged issues (don't re-classify the whole board).** Read `~/Code/_vault/_work/apprecio/triage/scan-index.md` if it exists (format under §4). It holds, per issue last scanned, an `updatedAt` + `last_comment_id` fingerprint and its resulting classification. As you enumerate (step 1), compare each in-window issue's current `updatedAt` against the index:
-   - **Not in the index, OR `updatedAt` changed AND `last_comment_id` changed** → a comment moved → re-process fully (steps 2-3).
-   - **`updatedAt` changed but `last_comment_id` did NOT** → the move was a field/state change (e.g. a mass "Blocked"), not a new comment → the mention classification still holds → reuse the cached entry, just refresh `updatedAt` (don't read comments).
-   - **`updatedAt` unchanged** → reuse the cached classification; don't read its comments at all.
-   Only re-process issues that actually moved. **Never serve a stale classification:** any fingerprint change → re-process that issue. Refresh the index at the end (§4).
+1. Por cada team: enumerar con `search_linear_issues` (tabla lean) + resolver la ventana `--since` con un `list_issues(updatedAt="-P{N}D")` parseado por campos lean. Nunca volcar descripciones completas (≈70k chars para ~50 issues → revienta el budget).
+2. **Barrido dual obligatorio — descripción AND comentarios, sin excepción.** Una mención puede estar en cualquiera; un scan que leyó solo comentarios es INVÁLIDO. Descripción vía `get_issue` (campo description); comentarios vía `list_comments(orderBy="createdAt")` newest-first. Detectar con **3 patrones** (cualquiera cuenta), registrando por hit `source + comment_id + quote verbatim`:
+   - **Tag en descripción:** `<user id="6a1e659a-ca3d-417f-b460-b62307d9354d">` — match por UUID. Es @mención de primera clase, NO name-drop (se omitió en RYR-82).
+   - **@-mención en comentario:** `@cmoreno`, word-boundary (no `@cmoreno2`).
+   - **Display-name en prosa:** `C[eé]sar` word-boundary en desc o comentarios sin handle/UUID (se omitió en RYR-87/88). Dedupe contra los hits de handle/UUID.
+   - **Guardas:** paginar `list_comments` hasta `hasNextPage=false` (nunca decidir desde un read truncado — RYR-6/RYR-83). Antes de clasificar, registrar `sources_read: [description, comments]`; si falta una → re-leer.
+3. **Filtro pending (por timestamp).** Sobre la lista COMPLETA de comentarios newest-first: el issue es *pendiente* si la mención/tag más reciente **dirigida a César** es posterior al último comentario que el propio César escribió (`author.id = 6a1e659a-…`). Un "César comentó alguna vez" NO resuelve un ask posterior; una aprobación vieja no cierra una iteración nueva (esto escondió RYR-83). Si tras leer todo no podés garantizar que viste el comentario más reciente → **PENDIENTE**.
+4. **Verificación de evidencia (ambas direcciones).** Para threads grandes (80+ comentarios), correr el barrido paginado en un **sub-agente** que devuelve SOLO `{comentario más reciente, último de César, cada mención-a-César con timestamp + quote verbatim}` — paginando a `hasNextPage=false`. Por cada mención reportada, re-leer la fuente citada y confirmar que el quote aparece **byte-a-byte** y que el token (`@cmoreno`/UUID/`C[eé]sar`) está literalmente dentro. Si no aparece verbatim → alucinación → descartar (RYR-87). Re-chequear también menciones que el sub-agente pudo OMITIR (tags en descripción).
 
-1. For each team, enumerate candidates with pm-agents `search_linear_issues(team_key=<KEY>, limit=200)` — a **lean table** (identifier/title/state/priority/assignee/labels, NO descriptions), avoiding the ~70k-token blowup of `list_issues`. **Caveat:** `search_linear_issues` filters by state, **not** `updatedAt`, so it does NOT honor `--since <Nd>` on its own. To respect the window, keep one `list_issues(team, updatedAt="-P{N}D")` call parsed for **lean fields only** (id/identifier/title/updatedAt — never full descriptions) to get the in-window id set, or post-filter candidates by each one's `updatedAt`.
-2. For each in-window issue, read it with `read_linear_issue(<IDENTIFIER>, comment_limit=<N>)` — one call returns description + a bounded comment thread (replaces `get_issue` + `list_comments`). Then detect the mention on the returned bodies, with **THREE patterns** (a mention can use any one):
-   - **Description tag:** `<user id="6a1e659a-ca3d-417f-b460-b62307d9354d">` — match by **UUID** (the handle text is unreliable in descriptions).
-   - **Comment @-mention:** `@cmoreno` in any comment body, **word-boundary** matched (so `@cmoreno2`/substrings don't false-match).
-   - **Display-name in prose:** `@Cesar` / `Cesar` / `César` referenced in prose (description OR comments) WITHOUT the `@cmoreno` handle or UUID tag — match `C[eé]sar` word-boundary. This is a real recurring pattern the handle/UUID scan MISSES (e.g. "lo resolverá junto con Cesar", "@Nicole y @Cesar los apoyarán" — found invisible on RYR-87/RYR-88). **Dedupe** against the handle/UUID hits. These are usually prose name-drops → most land in `INFORMATIVO`, but they must be **seen**, not invisible.
-3. **Pending filter:** a mention is *pending* if it appears AND there is **no** comment in that issue authored by `6a1e659a-…` (`author.id`) created **after** the mention. (Issue-level resolution for v1 — if César commented anywhere later in the issue, treat as handled.)
-4. **Cost control & scaling:**
-   - Prefer `search_linear_issues` (lean table) for enumeration; reserve `list_issues` only to resolve the `--since` window, and even then extract only lean fields (id, title, updatedAt, identifier) — its **full descriptions** blow the token budget (≈70k chars for ~50 issues). If a result is dumped to a file, parse that file for lean fields instead of reading it raw.
-   - Bound `read_linear_issue` with `comment_limit`; only read in-window issues. **Never read code in Pass 1.** Summarize huge threads; don't load everything.
-   - **Long threads silently truncate.** Threads with ~80+ comments / >90k chars (e.g. APP-17, APP-12) exceed `read_linear_issue`'s token limit and get cut — a mid-thread mention can be lost. For those: run the scan in a **sub-agent** and/or page comments (lowest `comment_limit` that still reaches the latest activity); don't trust a single truncated read.
-   - For a busy team (many issues/window), run the comment-scan in a **sub-agent** that returns ONLY the pending matches (keeps the main context clean). **Then VERIFY the sub-agent's output** — re-pull each flagged issue's comments before reporting; sub-agents can produce false positives (one invented a pending mention this skill had to discard).
+### 2. Clasificar por confianza (no por bucket)
 
-### 2. Classify each pending mention (lane gate)
+Cada mención pendiente cae en UN nivel. La duda baja un nivel (hacia visible), nunca a descarte silencioso:
 
-Exactly one bucket:
+- **🔴 Necesita tu respuesta** — requiere las TRES condiciones (feedback César 11/06, cura del FP RYR-111): **(a)** CTA/pregunta dirigida a César dentro de su lane (validación de estándar técnico — el code review formal es de Ignacio, regla `8763ae44` 11/06); **(b)** sigue ABIERTA tras leer el flujo POSTERIOR a la mención (nadie la cerró: ni el autor auto-respondiéndose, ni otro resolviéndola, ni la conversación avanzando sin César); **(c)** alguien espera la respuesta de César para avanzar. **Incluye iteraciones de validación técnica en su lane aunque no haya signo de pregunta** (un dev entregando iter 2 espera su sign-off → RYR-83). Un llamado de atención que el flujo ya cerró NO es 🔴 — baja a 🟡 "acuse opcional" (con advertencia del costo relacional si se repite el silencio con Ignacio). Lleva borrador.
+- **🟡 Decidí vos (ambiguo)** — mención real sin respuesta posterior de César que: no tiene ask literal (handoff/iteración/atribución/tag), o que el clasificador descartaría por JUICIO en vez de evidencia, o cuyo dueño parece ser otro (Ignacio = QA/merge; Nicole = scope de producto). **Destino de toda duda.** Sin borrador — cita + por qué dudo + dueño probable si aplica.
+- **Descartado (no se lista item por item)** — SOLO por evidencia: César respondió después, o match falso. Va como **una línea de conteo** al final (ej. `18 descartados — ya respondidos o match falso: RYR-6, RYR-44…`). No se cita uno por uno: ahí muere el ruido.
 
-- **REQUIERE RESPUESTA** — an @mention/CTA or question directed at César, **within his lane** (¿el dev cumplió lo necesario para avanzar a code review?).
-- **NO ES TU LANE** — the ask is QA/merge approval (owner: **Ignacio**) or product scope / what's in-out (owner: **Nicole**). Name the owner; César does not answer.
-- **INFORMATIVO / SIN ACCIÓN** — prose name-drop (not an `@`-tag), FYI, already resolved, or no open ask.
+**Agrupar por ISSUE, no por mención (regla anti-ruido).** La unidad de visualización es el **issue**, no la mención individual. Un issue con varias menciones aparece **UNA sola vez**, en el nivel MÁS ALTO de cualquiera de sus menciones (si tiene aunque sea una 🔴 → va en 🔴; sus otras menciones 🟡 cuelgan como sub-bullets dentro de la misma tarjeta). **Todos los conteos del header son por issue** (`{N} necesitan respuesta` = N issues, no N menciones). Sin esto, un issue charlado como RYR-82 reaparece 5-6 veces y vuelve el ruido que este rediseño elimina.
 
-### 3. Draft replies (only for REQUIERE RESPUESTA)
+### 3. Borradores (solo 🔴) — listos para publicar a la primera
 
-For each, produce:
-- **Resumen (plain):** 2-3 sentences a non-technical reader understands — what the problem is.
-- **Borrador de respuesta:** confident, lean, in-lane, in Spanish (see Rules → Style). Tag any code claim `[inferido]` (not yet verified).
-- **Por qué:** one line of reasoning.
-- **Verificar:** which claims need Pass 2 (`--verify <ISSUE-ID>`) before posting.
+El objetivo es que César **publique sin iterar**. Por cada 🔴, producir EN ESTE ORDEN:
 
-### 4. Write the digest
+1. **📖 De qué se trata** — el problema en lenguaje súper simple, para alguien que NO conoce el issue (2-3 frases, cero jerga). César a veces no participó del hilo; esto lo pone en contexto en 5 segundos.
+2. **🎯 Qué respondés y por qué** — el racional del borrador en 1-2 frases: la decisión técnica + el encuadre de los criterios del perfil de Ignacio (¿se pasa a code review o no? ¿qué se considera, qué se omite?). Es el "por qué" para que César entienda qué está mandando. (Que NO repita lo de 📖: 📖 = el problema; 🎯 = la decisión.)
+3. **Borrador** — confiado, lean, en español (ver Estilo). Tag `[inferido]` en todo claim de código no verificado (el gate §3.5 los resuelve antes de mostrar — un borrador publicable lleva CERO `[inferido]`).
+4. **Veredicto (formato Ignacio)** — el borrador de un review en su lane CIERRA con el veredicto que Ignacio espera: **`APPROVE` / `APPROVE WITH CONDITIONS` / `CHANGES REQUESTED`**, y si hay hallazgos, en bloques **`MUST FIX` / `SHOULD FIX` / `CONSIDER`** con evidencia `ruta:línea`. `APPROVE WITH CONDITIONS` para cambios que no tocan lógica de negocio (sin nueva fase de QA). Para 🔴 que NO son review (feedback interpersonal, acceso, decisión de scope) no hay veredicto técnico — solo el borrador.
+5. **⚠️ Advertencias** (si las hay) — ver §3.5 / Rules. Redactadas impersonales: dónde un criterio del perfil no está cubierto, o dónde el item roza el lane de Nicole/Julieth. Nunca «Ignacio diría/pediría».
 
-Write to the digest path (am/pm by local time, one file per run — don't overwrite). Mark mentions that appeared in a prior digest and are still pending as **"viene de antes"**.
+**Borrador condicional → 🟡, no 🔴.** Si la respuesta depende de una condición externa sin resolver («solo si la key sigue desactualizada», «si nadie lo resolvió por interno»), el item NO es un 🔴 firme: va a **🟡 decidí vos** con la condición explícita. 🔴 es solo lo que tiene un borrador publicable sin condición previa.
 
-**Update the scan-index** (`~/Code/_vault/_work/apprecio/triage/scan-index.md`) so the next run can skip unchanged issues (§0). One row per in-window issue with its fingerprint + classification; commit it with the digest; drop rows whose issue fell out of the window. Vault-only (same rationale as the Pass 2 cache).
+### 3.5. Gate de borrador — evaluador independiente (lo que evita iterar)
+
+**Ningún borrador 🔴 se muestra hasta pasar este gate.** Por cada borrador, lanzar un **sub-agente evaluador independiente** (distinto del que redactó). Su trabajo es **verificar el borrador contra una lista de criterios objetivos** — NO encarnar a nadie.
+
+**Barrera dura (decisión de César — "con mucho cuidado"):** el evaluador **evalúa el borrador contra los CRITERIOS de `ignacio-review-criteria.md`** (fuente canónica de criterios de review; `ignacio-product-profile.md` es solo contexto de prioridades), **nunca "actúa como Ignacio" ni predice qué diría**. Las advertencias se redactan impersonales — **«el criterio de _outcome primero_ del perfil no está cubierto»**, NUNCA **«Ignacio pediría…»**. Modelar "qué propiedad falta" es alinear; "qué diría Ignacio" es simular — prohibido (ver Rules).
+
+**Qué recibe el evaluador:** el borrador + su veredicto; **la fuente citada que RE-LEE él mismo** (vía `comment_id` → el comentario real, no solo la cita que le pasaron — así es independiente en la EVIDENCIA, no solo en el juicio; confirma el quote byte-a-byte); los criterios del perfil; **el hilo COMPLETO** (no solo la cita — para detectar decisiones ya cerradas, Criterio 8); y **la referencia persistida** que re-lee él mismo: `_shared` (**SIEMPRE**: `ignacio-review-criteria.md` + `linear-review-lessons.md` + `learnings-*.md` + `readiness-*.md`), y engram (`mem_search` por ISSUE-ID + tema) **best-effort** — si engram difiere del vault, **gana el vault**. Si al re-leer la fuente el claim base no aparece o cambió → FAIL inmediato (la lectura del redactor era incompleta).
+
+**Cuándo aplica el lente de producto (criterios 1-3, 7):** SOLO si la mención es un **review/decisión técnica en el lane de César**. Para 🔴 **no-review** (feedback interpersonal, gestión, pedido de acceso/secrets) → esos criterios se marcan **N/A** y NO se corre el lente de producto. **Si la mención es de Ignacio o está dirigida a Ignacio, el lente de su perfil NO se usa en absoluto** (evaluar un mensaje a Ignacio con su propio perfil es la trampa de simulación) — solo corren los criterios 4-6.
+
+**Chequeo de decisión cerrada + memoria (Criterio 8) — la barrera que faltó (RYR-83, 04-jun).** Antes de emitir CUALQUIER `MUST FIX`/`SHOULD FIX` o veredicto, el evaluador cruza cada hallazgo contra:
+> - **Las decisiones YA tomadas en el hilo.** Si el punto de tu hallazgo ya fue planteado y **cerrado** por alguien —Ignacio lo vetó, el dev lo acordó, o —el peor caso— **el propio César ya validó un plan que tu borrador contradice**— → el hallazgo NO es válido como condición. La verificación de código produce **HECHOS**; el veredicto los filtra por el **contexto de decisión** del hilo. Un hallazgo cierto en abstracto («la migración está out-of-order») **no es un FIX** si el equipo ya lo evaluó y decidió lo contrario con conocimiento de causa.
+> - **La memoria/lecciones persistidas.** `_shared` (perfil, `learnings-contratos-compartidos-y-agentes-ia.md`, `learnings-preview-environments-cicd.md`, `readiness-y-evaluacion-pr-issues.md`) **siempre**, y engram (`mem_search`) best-effort. Si el borrador repite un error ya corregido o contradice una preferencia/convención registrada → FAIL.
+>
+> **Regla dura:** NUNCA contradecir una decisión que César ya validó en el hilo — es el **peor falso positivo** (erosiona su criterio ante el equipo). Si hay info **genuinamente nueva** que justifique reabrir, va como **pregunta/insumo citando la decisión previa**, jamás como condición que da la decisión por no-tomada.
+
+| # | Criterio | Aplica a | FAIL si… |
+|---|---|---|---|
+| 1 | **Outcome primero** | review | el problema admite un outcome/métrica de negocio y el borrador no lo nombra |
+| 2 | **Estado + next step + owner** explícitos; si atascado, decisión binaria de scope | review | el próximo paso o el dueño quedan implícitos |
+| 3 | **Causa raíz, no parche; no remueve defensa** (`tenant_id`/RLS) | review con fix | propone parchar el síntoma o quitar una defensa |
+| 4 | **Lane** — técnico; lo de QA/scope va como INSUMO a Julieth/Nicole, no como veredicto | todos | el borrador aprueba QA, decide scope, o invade otro lane |
+| 5 | **Verificación** — **CERO** claims `[inferido]` (sin excepción de "no-decisivo") | todos | queda cualquier `[inferido]` sin `[verificado: file:línea]` |
+| 6 | **Estilo** — confiado, lean, sin hedging/disclaimers/auto-aclaración de lane | todos | hay relleno, dudas ("debería confirmar…") o se justifica de más |
+| 7 | **Veredicto** — cierra con APPROVE/CONDITIONS/CHANGES + MUST/SHOULD/CONSIDER, evidencia `ruta:línea` | review | falta el veredicto o su evidencia |
+| 8 | **No reabre decisión cerrada / respeta corrección persistida** | todos | el borrador propone (FIX o veredicto) algo que el hilo YA discutió y cerró, **o que contradice un plan que César ya validó**, o una corrección/preferencia/lección registrada en `_shared`/engram |
+| 9 | **Solicitud de review bien formada** (lección RYR-111) | review | el borrador emite veredicto sobre una PEDIDA inválida: el comentario que solicitó la review formal no menciona a **@juli** (QA siguiente) y a **@ignacio** (revisión/merge), o el issue NO está en `In Review`. El evaluador re-lee el comentario de la solicitud (`comment_id`) y el estado del issue — no confía en lo que le pasaron |
+
+**Resolución:**
+- **Todos PASS / N/A** → **✅ Listo para publicar**.
+- **FAIL en criterios de contenido/forma (1-4, 6-7)** → el evaluador **reescribe**, **máximo 2 vueltas**. Si tras 2 vueltas un criterio sigue sin cerrar → mostrar el borrador marcado **⚠️ {criterio} no cerró** (no loop infinito; César decide con el dato).
+- **FAIL en #5 (claim sin verificar)** → **verificación LIGERA inline** SOLO si es confirmar UN hecho citado (≤2 lecturas puntuales: `grep` de un símbolo, leer la línea citada). **Si exige trazar el path entre capas (root cause real) → eso es Pass 2, NO se corre en el triage default:** el borrador se marca **⚠️ No publicable aún — falta verificar {check decisivo}** → `--verify {ISSUE-ID}`. **Un APPROVE nunca puede descansar en `[inferido]`.**
+- **FAIL en #9 (solicitud de review mal formada):** **el veredicto se RETIRA** — no se publica review sobre una pedida inválida. El borrador se reescribe como **devolución de proceso** (liviana): qué le falta a la solicitud (estado `In Review` / cc a @juli / cc a @ignacio) para re-solicitarla bien. César puede ordenar override explícito.
+- **FAIL en #8 (reabre decisión cerrada / choca con corrección persistida)** → **retirar el hallazgo del veredicto** y **recalcular el veredicto sin él** (un SHOULD FIX retirado puede convertir un `APPROVE WITH CONDITIONS` en `APPROVE` limpio — fue exactamente el caso RYR-83). Si el evaluador juzga que hay info **genuinamente nueva** que amerite reabrir → reescribir como **pregunta/insumo citando la decisión previa**, nunca como condición. Jamás dejar en el borrador algo que contradiga una decisión ya cerrada o que César ya validó.
+- **Choque con tu juicio técnico o roce de lane** → el evaluador NO sobrescribe: agrega **⚠️ el perfil prioriza {X} y el borrador no lo cubre** / **⚠️ roza el lane de {Nicole/Julieth} — encuadrado como insumo**. César decide.
+
+Bias del evaluador: **default a FAIL ante la duda** — preferible una reescritura interna (acotada a 2) a que César publique y tenga que corregir en Linear.
+
+### 4. Escribir el digest + scan-index
+
+Digest al path (am/pm, un archivo por corrida). **Sello de hora de corte en el header.** Marcar como "viene de antes" lo que ya apareció en un digest previo y sigue pendiente.
+
+`scan-index.md` — **registro de qué respondió César, NO autorización para saltarse lecturas.** 3 columnas, vault-only, se reescribe cada corrida con lo efectivamente leído. **Si el archivo en disco tiene el formato viejo (9 columnas con `desc_hash`/`last_comment_id`/`classification`), sobrescribirlo al formato de 3 columnas en esta corrida — y nunca leer una columna `classification` heredada como veredicto (viola la Regla 1).**
 
 ```markdown
 ---
-last_scan: 2026-06-01
-window: 7d
-teams: RYR,PLA,APP
+last_scan: 2026-06-03T13:39-05   # hora local de corte
+window: 7d · teams: RYR,PLA,APP
 ---
-| issue | updatedAt | last_comment_id | pending | classification |
-|---|---|---|---|---|
-| RYR-89 | 2026-05-29T00:11Z | 78c59aa7 | yes | requiere-respuesta |
-| RYR-87 | 2026-05-31T14:00Z | none | no | informativo |
+| issue | respondió César (fecha) | nota |
+|---|---|---|
+| RYR-82 | no | 🔴 review estándar PR#538 |
+| RYR-6  | 28/05 16:18 | descartado — respondido |
 ```
-
----
-
-## Pass 2 — Verify (`--verify <ISSUE-ID>`)
-
-Goal: confirm or correct each `[inferido]` claim against the REAL code, end-to-end.
-
-**0. Analysis cache — recover before re-analyzing (don't re-trace from scratch).** Check `~/Code/_vault/_work/apprecio/triage/issues/<ISSUE-ID>.md`:
-   - **No file** → full analysis (steps 1-7), then write the cache (step 8).
-   - **File exists** → read it + `read_linear_issue(<ISSUE-ID>)`, then compare fingerprints:
-     - Issue fingerprint (`last_comment_id` + `comments_count`) unchanged **AND** every `code_ref`'s `sha` unchanged → **return the cached analysis** ("sin cambios desde {last_analyzed}"). Don't re-trace.
-     - **New comments** since `last_comment_id` → analyze ONLY the delta, using the cached diagnosis as context.
-     - A new comment **contradicts** the cached diagnosis → re-analyze that part, flag the change.
-     - A `code_ref`'s `sha` changed (`git -C <base> log -1 --format=%H <ref> -- <file>`) → re-verify ONLY those refs.
-   - **The cache never overrides the code:** a hit returns the prior analysis only when BOTH fingerprints match; any mismatch → re-verify that part. The cache saves work, it never invents certainty.
-
-1. `read_linear_issue(<ISSUE-ID>, comment_limit=<N>)` for full context — description + bounded comment thread in one call (native `get_issue` + `list_comments` is the fallback).
-2. **Trace the LIVE path end-to-end — don't stop at one layer:** rendered component → hook/service → endpoint → backend handler → the exact field/computation. The bug usually lives where the contract diverges between two of these.
-3. **Read the actual code (see Code access — THREE layers):** prefer the **local clones** in READ-ONLY mode — `back-pulse-cesar` (backend) and `app-rr-cesar` (app frontend) under `~/Code/work/rr-project/`; `git -C <base> grep -n '<pattern>' <ref>` reads any branch without checkout. Use **pm-agents** `grep_repo`/`read_repo_file` for `pulse` as primary AND as a **second-opinion cross-check** (**don't use `glob`** — search without it, read by path). `gh clone` is the fallback only when no local clone exists. NEVER mutate César's working tree (no `checkout`/`pull`).
-4. **Anti-hallucination guards (hard-won — honor them):**
-   - **Confirm the component is actually rendered** before reasoning about it — `grep` its usage. Dead/orphaned code (zero references) is a classic wrong turn.
-   - **Follow the EXACT field the UI reads**, not a similarly-named one (e.g. UI reads `my_current`, not `current`).
-   - **"Correct elsewhere" ≠ "correct in the consumed field"** — different surfaces hit different endpoints/fields.
-   - **Ruling out one layer does NOT prove another.** Prove the failing line; don't infer it.
-   - **Confirm the backend function/RPC is the LATEST definition** before trusting it — Postgres RPCs are `CREATE OR REPLACE`'d; a later migration can change behavior. Grep ALL definitions, read the newest.
-   - **For a fix's COMPLETENESS, enumerate sibling paths.** If the fix touches a shared constraint/field (e.g. a CHECK allowlist), check ALL writers of that field, not just the reported one. (badge/ecard/challenge all write via the same grant path → a fix omitting one sibling is incomplete and re-leaves the same bug.)
-5. **Fix-calibration gate (when the remedy touches a feature flag — hard-won from RYR-44).** A feature-flag bug has THREE mutually exclusive remedies; pick the right one PER flag, never a uniform "seed them all":
-   | Flag state | How to confirm | Correct fix |
-   |---|---|---|
-   | Absent from `feature_flag_defaults` | `grep_repo(pulse, '<flag_key>')` finds the flag but no seed row | **SEED** `default_value=true` |
-   | Already seeded `default=true` but off for one tenant | grep confirms the seed; symptom is tenant-scoped | It's an **OVERRIDE** in `tenant_feature_flags` (AND logic) — do NOT re-seed; check/clear the override |
-   | **0 references in the backend** | `grep_repo(pulse, '<flag_key>')` = 0 matches | It was **never a backend flag** → cannot be seeded → fix is to **REMOVE the gate in the frontend** |
-   - **Hard check before recommending "seed `<flag>`":** run `grep_repo(pulse, '<flag_key>')`. **0 matches → the seed recommendation is FORBIDDEN** (seeding a flag that doesn't exist in the backend sends Support chasing a ghost — the worst failure mode). Instead, **NAME the positive fix**: the gate lives only in the frontend, so the remedy is to REMOVE it there — grep the frontend repo (and its recent PRs) to point at the exact gate to delete. Don't settle for "check it at runtime".
-6. Upgrade each claim to `[verificado: file:línea]` or correct it. **If you can't reach the code that decides it, say so and give the decisive runtime/DB check — do NOT publish a root cause you only inferred.**
-7. Refine that one draft so it's safe to post (file:line accurate, no remaining `[inferido]`).
-8. **Update the analysis cache.** Write/refresh `~/Code/_vault/_work/apprecio/triage/issues/<ISSUE-ID>.md` with the current fingerprints + diagnosis (format below), then commit it (the git history IS the "what we answered / what happened" trail). On a delta run, supersede only the parts whose fingerprint changed; don't discard the prior analysis.
-
-### Analysis cache format
-
-One file per issue at `~/Code/_vault/_work/apprecio/triage/issues/<ISSUE-ID>.md` (separate from the dated digests in `triage/linear/`). The fingerprints are how step 0 decides cache-hit vs re-analyze:
-
-```markdown
----
-issue: RYR-89
-last_analyzed: 2026-05-30
-issue_fingerprint: { last_comment_id: <id>, comments_count: 7 }   # changed → new comments to analyze
-code_fingerprint:                                                 # changed sha → re-verify that ref
-  - { ref: "apprecio-pulse@origin/main:supabase/functions/challenge-api/services/scorecard.service.ts", sha: "219c785" }
-status: pendiente-bd        # | respondido | resuelto
-verdict: "one-line root cause"
----
-## Qué ocurre        (root cause + verified code_refs)
-## Qué debe lograr    (fix + coverage)
-## Qué se respondió   (what César posted + when — fill when known)
-## Pendiente          (what still needs DB/runtime verification)
-```
-
-- **Code fingerprint** uses the local clone (Code access layer 1): `git -C <base> log -1 --format=%H <ref> -- <file>` is the **full 40-char sha** of the last commit touching that file on that ref (use `%H`, never the abbreviated `%h` — variable abbreviation length can cause false mismatches). Different sha → the verified line may have moved → re-verify before trusting the cached claim.
-- **Pass 1 scan cache (implemented):** the same fingerprint mechanism lets the triage scan skip unchanged issues — see Pass 1 §0 (recover) + §4 Write the digest (update `scan-index.md`). Same anti-stale rule: any fingerprint change → re-process that issue.
-
----
-
-## Watch mode (Phase 2) — `--watch <person>`
-
-Surface **OPTIONAL proactive opportunities**: open, technical asks directed at someone ELSE (default target: **Ignacio**, id `1f03f08d-db10-4bf2-8999-499b7842f50c`) where César's technical input would genuinely add value. This is OPT-IN and advisory — César decides whether to weigh in; the skill never auto-drafts an unsolicited barge-in or posts.
-
-1. Resolve the watch target's id (Ignacio by default; `--watch <name>` → resolve via `list_users`/`get_user`).
-2. Scan the teams (default RYR; honor `--teams`) for mentions of the target — `@ignacio` in comments + the target's UUID in descriptions — same scoped scan as Pass 1 (token-lean `list_issues`; sub-agent for the busy team + verify its output).
-3. Keep ONLY items that pass ALL THREE gates:
-   - **Open** — the technical ask/question is unresolved (no answer that closes it).
-   - **Technical & in César's domain** — R&R code / architecture / technical-standard (his lane or adjacent), NOT pure process / QA / scheduling / product.
-   - **César adds value** — he has real technical insight (a bug he traced, an architecture call, a path he knows). If unsure, **DROP it** — false positives here are pure noise.
-4. For each survivor: plain summary + **why César could add value** + a SUGGESTED angle (NOT a finished draft) with `[inferido]` on any code claim. Mark each **OPCIONAL — vos decidís si intervenís**.
-5. Output under a separate section **"Oportunidades proactivas (opcional)"** — NEVER mixed with "Requieren respuesta" (Phase 1). NEVER post.
-
-**Bias:** prefer FEWER, higher-confidence opportunities. A noisy proactive list is worse than a short sharp one. Same verify-first gate applies before suggesting any code-specific angle.
-
----
-
-## Rules (non-negotiable — these are the value of the skill)
-
-**Lane.** César is the *technical-standard stopper*: he decides ONLY "¿el dev cumplió con todo lo necesario para avanzar a code review?". He does **not** approve QA or merges (→ **Ignacio**) and does **not** own product scope (→ **Nicole**). Drafts must never drift outside this. `NO ES TU LANE` items name the owner instead of drafting a reply.
-
-**Intervention trigger.** Two distinct modes:
-- **Default (Phase 1):** respond ONLY where there's an actual open ask directed at César (an `@`-mention/CTA, or a question he was tagged on). Being named in prose ("Ignacio lo resolverá junto con Cesar") is **not** an open ask → `INFORMATIVO`. Don't invent interventions.
-- **`--watch` (Phase 2):** surface OPTIONAL proactive opportunities on someone ELSE's mentions (e.g. Ignacio), gated to open + technical + where-César-adds-value, always marked **OPCIONAL**. Even here: never auto-draft a barge-in, never post — only suggest an angle for César to decide.
-
-**Style (drafts).** Confident and lean:
-- No disclaimers, no role self-clarification ("aclaro mi lane…").
-- No hedging ("el code review debería confirmar…").
-- No spelling out assumed next steps ("el paso a QA queda en tu cancha").
-- Lead with the verdict; then precise evidence. Answer what's asked, nothing more.
-
-**Product alignment (Ignacio's lens).** Before finalizing any draft, consult `~/Code/_vault/_work/apprecio/_shared/ignacio-product-profile.md` and orient the draft toward what Ignacio (Jefe de Producto) prioritizes: lead with the business **outcome/metric** (not just the technical detail); make **QA state + next step + named owner** explicit; **root-cause, not patch**; **never propose removing a defense** (tenant predicate, RLS); prefer **centralizing cross-cutting concerns in the canonical RPC** over per-module patches; **`observe` before `enforce`** for rollouts. This is to **ALIGN** with his product lens — **NEVER to simulate him, speak for him, or attribute words to him.** **Format he expects:** open with the **outcome**; close with **status + next step + named owner** (+ date if relevant); when you're laying out **open decisions or scope options**, use his **ADLC decision table** (`#, Decisión, Opciones, Recomendación, Status`) instead of prose. Keep it confident and lean — use the table ONLY for decisions-to-make, not for every reply.
-
-**Rigor (anti-hallucination).** Never assert a code fact from comments alone — tag `[inferido]` until confirmed `[verificado: file:línea]`. Never assert a **root cause** until the live path is traced end-to-end (the component is actually mounted, the exact consumed field, its endpoint, its backend computation/RPC — confirmed the latest definition). Ruling out one layer ≠ proving another. **A confident-but-wrong verdict is worse than "not 100% yet — here's the decisive check."** A draft with `[inferido]` code claims must not be posted as-is. **Never propose a fix without calibrating it per affected entity:** for feature flags, run the Fix-calibration gate (Pass 2 §5) — seed / tenant-override / remove-frontend-gate are mutually exclusive, and `grep_repo(pulse, '<flag>')` = 0 forbids any seed recommendation.
-
-**Publishing gate (two states only).** Never hand over a publish-ready draft until it's verified end-to-end. Only two states exist: **"100% verificado — acá está el draft"** OR **"todavía no — esto es lo que falta verificar."** Never a confident draft in between. **The verification gate is the skill's, not the user's — they should never have to ask "¿verificaste?".**
 
 ---
 
 ## Digest format
 
 ```markdown
-# Triage Linear — {YYYY-MM-DD} ({AM|PM})
-_teams: RYR,PLA,APP · ventana {N}d · {X} issues escaneados · {Y} menciones pendientes_
+# Pendientes Linear — {YYYY-MM-DD} ({AM|PM})
+_{N} necesitan respuesta · {M} a decidir · {D} descartados · escaneado {HH:MM} {TZ} · ventana {N}d · teams {…}_
+_(todos los conteos son por ISSUE, no por mención)_
 
-## Requieren respuesta ({K})
+## 🔴 Necesitan tu respuesta ({N} issues)
 
-### {ISSUE-ID} — {título corto}
-- **Quién / cuándo:** {autor} · {top-level | reply} · {fecha}{ · viene de antes}
-- **Problema:** {resumen plain, 2-3 frases}
-- **En tu lane:** Sí — {por qué}
+### {ISSUE-ID} — {título corto}   ✅ Listo para publicar | ⚠️ No publicable aún
+- **Quién/cuándo:** {autor} · {top-level|reply} · {fecha}{ · viene de antes}
+- **Cita:** `{comment_id|DESCRIPTION}` · «{cita textual EXACTA con el @cmoreno/UUID/Cesar}»
+- **📖 De qué se trata:** {problema en lenguaje súper simple, sin jerga, 2-3 frases}
+- **🎯 Qué respondés y por qué:** {racional: decisión técnica + encuadre de Ignacio — pasar/no pasar, qué se considera}
 - **Borrador:**
   > {respuesta confiada, lean, en español}
-- **Por qué:** {razón en 1 línea}
-- **Verificar:** {claims [inferido]} → `/linear-mention-triage --verify {ISSUE-ID}`
+  >
+  > {si es review:} **Veredicto: APPROVE | APPROVE WITH CONDITIONS | CHANGES REQUESTED**
+  > {MUST FIX / SHOULD FIX / CONSIDER con evidencia `ruta:línea`, si hay}
+- **⚠️ Advertencia:** {solo si aplica — «el perfil prioriza X y el borrador no lo cubre» / «roza lane de Nicole — encuadrado como insumo»}
+- {solo si NO está listo:} **⚠️ Falta verificar {check decisivo}** → `--verify {ISSUE-ID}`
+- _También en este issue (decidí vos):_ `{comment_id}` «{cita}» — {qué es}   ← menciones 🟡 del MISMO issue cuelgan acá, no en su propia sección
 
-## No es tu lane ({J})
-- **{ISSUE-ID}** — {qué piden} → owner: **{Ignacio | Nicole}**
+## 🟡 Decidí vos ({M} issues) — ordenados por confianza, los más probables arriba
+- **{ISSUE-ID}** — `{comment_id|DESCRIPTION}` · «{cita exacta}» — {qué es: handoff/iteración/tag} · {por qué dudo}{ · dueño probable: Ignacio/Nicole}
 
-## Informativo / sin acción ({M})
-- **{ISSUE-ID}** — {por qué no requiere acción}
+## Descartados ({D})
+{ISSUE-ID, ISSUE-ID…} — ya respondidos por César o match falso. (Detalle en scan-index.)
 ```
+**Caducidad:** foto a las {HH:MM}. Los asks entran durante el día — re-corré antes de decir "estás al día".
+
+---
+
+## Pass 2 — Verify (`--verify <ISSUE-ID>`) · opt-in, profundo
+
+Confirmar o corregir cada claim `[inferido]` de un borrador contra el código REAL. Se invoca explícitamente; el triage default NO lo corre.
+
+1. `read_linear_issue(<ISSUE-ID>, comment_limit=<N>)` — descripción + thread acotado.
+2. **Trazar el path vivo end-to-end:** componente renderizado → hook/service → endpoint → handler backend → el campo/cómputo exacto. El bug vive donde el contrato diverge entre dos capas.
+3. **Leer el código — TRES capas, en orden:**
+   - **(1) Clones locales (preferido, READ-ONLY):** `~/Code/work/rr-project/` → `app-rr-cesar` (front, `ivaldovinos-app/ryr-39255`), `back-pulse-cesar` (back, `ivaldovinos-app/apprecio-pulse`). `git -C <base> fetch -q` y luego `git -C <base> grep -n '<patrón>' <ref>` lee CUALQUIER rama sin checkout. **NUNCA** `checkout`/`pull`/`merge`/`reset` ni tocar los clones `.<feature>`.
+   - **(2) pm-agents `grep_repo`/`read_repo_file`** (repos `app`/`backend`/`force-manager`/`pulse`): primario para `pulse` y second-opinion del read local. `ryr-39255` NO es repo pm-agents. (No usar `glob` — es poco confiable; buscar sin él, leer por path.)
+   - **(3) `gh` CLI (fallback):** solo si no hay clone local. **Nunca concluir "no puedo acceder al código".**
+4. **Guardas anti-alucinación:** confirmar que el componente está renderizado (`grep` su uso — dead code es trampa clásica); seguir el campo EXACTO que la UI lee; "correcto en otro lado" ≠ "correcto en el campo consumido"; descartar una capa NO prueba otra; confirmar que la RPC/función backend es la definición MÁS NUEVA (`CREATE OR REPLACE` — grep todas, leer la última); para la COMPLETITUD de un fix, enumerar los paths hermanos (un fix que toca un constraint/campo compartido debe cubrir TODOS sus writers).
+5. **Fix-calibration gate (cuando el remedio toca un feature flag).** Tres remedios mutuamente excluyentes — elegir el correcto por flag, nunca "seed them all":
+
+   | Estado del flag | Cómo confirmar | Fix correcto |
+   |---|---|---|
+   | Ausente de `feature_flag_defaults` | `grep_repo(pulse,'<flag>')` halla el flag pero sin seed row | **SEED** `default_value=true` |
+   | Seeded `default=true` pero off para un tenant | grep confirma el seed; síntoma tenant-scoped | **OVERRIDE** en `tenant_feature_flags` (lógica AND) — NO re-seed; revisar/limpiar el override |
+   | **0 referencias en backend** | `grep_repo(pulse,'<flag>')` = 0 matches | Nunca fue flag backend → **REMOVER el gate en el frontend** |
+
+   **Check duro antes de recomendar "seed `<flag>`":** correr `grep_repo(pulse,'<flag>')`. **0 matches → recomendación de seed PROHIBIDA** (mandaría a Soporte a perseguir un fantasma — el peor fallo de Pass 2). Nombrar el fix positivo: grep el frontend para señalar el gate exacto a borrar.
+6. Subir cada claim a `[verificado: file:línea]` o corregirlo. Si no podés alcanzar el código que lo decide, decilo y da el check decisivo runtime/DB — **no publiques un root cause solo inferido.**
+7. Refinar ese borrador para que sea seguro de postear (file:line exacto, sin `[inferido]`).
+
+**Estado de publicación (dos estados, nunca intermedio):** "100% verificado — acá está el draft" O "todavía no — esto es lo que falta verificar". La verificación es del skill, no del usuario — César nunca debería preguntar "¿verificaste?".
+
+*(Cache de análisis Pass 2 opcional: `~/Code/_vault/_work/apprecio/projects/<proyecto>/issues/<ISSUE-ID>/triage.md` (proyecto por prefijo: RYR→rr) — un archivo por issue con el root cause verificado + refs `file:línea`. Sirve para recuperar el diagnóstico; al re-correr, SIEMPRE re-leer el thread vivo + re-confirmar los `file:línea` antes de reusar. No suprime lectura.)*
+
+---
+
+## Watch mode (`--watch <person>`) · opcional, advisory
+
+Oportunidades proactivas OPCIONALES sobre menciones a OTRA persona (default **Ignacio**, id `1f03f08d-…`) donde el aporte técnico de César sumaría. Opt-in; el skill nunca redacta un barge-in ni postea.
+
+1. Resolver el id del target (Ignacio por default).
+2. Scan de menciones al target (`@ignacio` + su UUID en descripción), mismo barrido dual que Pass 1.
+3. Mantener SOLO los que pasan los 3 gates: **abierto** (sin respuesta que lo cierre) · **técnico y en el dominio de César** (código/arquitectura R&R, no proceso/QA/scheduling/producto) · **César aporta valor** real. En la duda, DROP — acá los falsos positivos son ruido puro.
+4. Por sobreviviente: resumen plain + por qué César sumaría + ángulo SUGERIDO (no draft) con `[inferido]`. Marcar **OPCIONAL — vos decidís**.
+5. Sección aparte "Oportunidades proactivas (opcional)" — NUNCA mezclada con 🔴. Preferir POCAS y de alta confianza.
+
+---
+
+## Rules (el valor del skill)
+
+**Lane.** César es el *technical-standard stopper*: decide SOLO "¿el dev cumplió lo necesario para avanzar a code review?". NO aprueba QA ni merges (→ **Ignacio**), NO es dueño del scope de producto (→ **Nicole**). Los items 🟡 nombran al dueño en vez de redactar respuesta.
+
+**Estilo (borradores).** Confiado y lean: sin disclaimers, sin auto-aclaración de lane, sin hedging ("debería confirmar…"), sin deletrear next-steps asumidos. Liderar con el veredicto, luego la evidencia precisa. Responder lo que se pregunta, nada más.
+
+**Lente de Ignacio (central — gobierna el contenido del borrador, no solo el tono).** Todo borrador 🔴 se construye y se evalúa (gate §3.5) contra `~/Code/_vault/_work/apprecio/linear/knowledge/ignacio-review-criteria.md` (criterios canónicos de review) + `ignacio-product-profile.md` (contexto de prioridades) — las fuentes de "cómo Ignacio resuelve": cuándo se pasa a code review y cuándo no, qué se considera, qué se omite. El borrador debe: liderar con el **outcome/métrica** de negocio (no el detalle técnico); hacer explícito **estado + next step + dueño nombrado** (+ decisión binaria de scope si está atascado); **root-cause, no parche**; **nunca proponer remover una defensa** (`tenant_id`, RLS); preferir **centralizar lo cross-cutting en la RPC canónica**; `observe` antes de `enforce`; encuadrar lo técnico como **insumo** para el dueño (Julieth=calidad, Nicole=scope), no como veredicto sobre su lane. Para decisiones-a-tomar, su tabla ADLC (`#, Decisión, Opciones, Recomendación, Status`); para reviews, su formato `APPROVE/CONDITIONS/CHANGES` + `MUST/SHOULD/CONSIDER`.
+
+> **Dos barreras duras (no negociables):**
+> - **Es para ALINEAR, nunca para SIMULAR.** El skill modela "qué priorizaría/valoraría Ignacio", jamás "qué diría". Nunca poner palabras en su boca, nunca firmar como él, nunca atribuirle una opinión.
+> - **Advierte, no sobrescribe (decisión de César).** El borrador es de César (criterio técnico). Donde un criterio del perfil choca con su juicio, o el item roza el lane de Nicole/Julieth, el skill agrega una línea **⚠️** impersonal («el perfil prioriza X…»), nunca «Ignacio diría/pediría…», y César decide — NO reescribe el veredicto técnico por su cuenta.
+
+**Rigor (anti-alucinación).** Nunca afirmar que una mención/ask EXISTE sin quote verbatim + source/comment_id (RYR-87). Nunca afirmar un hecho de código desde comentarios solos — tag `[inferido]` hasta `[verificado: file:línea]`. Nunca un root cause sin trazar el path vivo end-to-end. Un veredicto confiado-pero-errado es peor que "todavía no — acá está el check decisivo".
 
 ---
 
 ## Notes / gotchas
 
-- **Mention encoding differs (THREE patterns):** comment bodies use plain `@cmoreno` (word-boundary); descriptions use `<user id="UUID">` (match the UUID); and **prose can name `Cesar`/`César` by display-name with no handle/tag** — scan `C[eé]sar` too (dedupe vs the handle/UUID hits), or those mentions stay invisible (real gap found on RYR-87/RYR-88).
-- **`list_issues` returns full descriptions** → can exceed the token limit (~70k for 50 issues). Parse for lean fields only; if dumped to a file, slice/grep the file.
-- **Pass 1 cost:** prefer pm-agents `search_linear_issues` (lean table) for enumeration and `read_linear_issue(comment_limit=N)` for per-issue context — reserve `list_issues` only to resolve the `--since` window. `search_linear_issues` filters by state, not `updatedAt`, so it doesn't honor `--since` on its own.
-- **Fix-calibration gate (feature flags):** never recommend "seed a flag" without `grep_repo(pulse, '<flag>')` first — 0 matches means it's not a backend flag and the fix is to remove the frontend gate, not seed. Seed / tenant-override / remove-gate are mutually exclusive (Pass 2 §5).
-- **`grep_repo` `glob` is unreliable** — search without it, then read by path.
-- **Code beyond pm-agents' 4 repos** (esp. the R&R app `ivaldovinos-app/ryr-39255`) → prefer the LOCAL clones under `~/Code/work/rr-project/` (`app-rr-cesar` front, `back-pulse-cesar` back) in READ-ONLY mode (`git grep <ref>` reads any branch without checkout); `gh` CLI is the fallback. Don't say "inaccessible". Registering `ryr-39255` in pm-agents via `add_product_repo` is admin-only (role `tl` is forbidden).
-- **Local clones are READ-ONLY for the skill:** `fetch` / `git grep <ref>` / `log` / `show` only — NEVER `checkout` / `pull` / `merge` / `reset` (don't disturb César's working tree or in-progress branches). Use the base clone + `git grep <ref>` to see any branch; leave the `.<feature>` clones untouched.
-- **Dead-code trap:** before basing an analysis on a component, confirm it's actually imported/rendered (`grep` its usage).
-- **Large threads** (e.g. governance comments) can blow the token budget — bound `list_comments`, summarize, never load full code in Pass 1; consider a sub-agent + verify its output.
-- **Storage is vault-only.** Do **not** write to engram from this skill. The per-issue **analysis cache** (`triage/issues/<ISSUE-ID>.md`) is vault-only too — chosen over engram because recovery is by exact key (the ISSUE-ID) + fingerprint diff, not semantic search, and it must work in headless/cron runs where the engram MCP may be absent.
-- **Never post to Linear.** The skill drafts; César reviews and posts.
+- **3 encodings de mención:** `@cmoreno` (comentarios, word-boundary) · `<user id="UUID">` (descripción, @mención de primera clase) · `Cesar/César` en prosa (sin handle). Los tres son REALES → mínimo 🟡, nunca descarte silencioso (gaps reales en RYR-82/87/88).
+- **`list_issues` trae descripciones completas** → puede pasar el límite de tokens (~70k para 50 issues). Parsear solo campos lean.
+- **Lector primario = `list_comments(orderBy=createdAt)` newest-first paginado a `hasNextPage=false`** — NO `read_linear_issue` (trunca). `search_linear_issues` filtra por estado, no por `updatedAt`.
+- **Sin caché de skip** (Regla 1): cada corrida lee desc + comentarios de todo issue en ventana. El `scan-index` solo recuerda "qué respondió César"; nunca decide qué saltarse.
+- **Threads grandes:** nunca truncar para ahorrar tokens — paginar dentro de un sub-agente que devuelve solo `{más reciente, último de César, menciones-a-César con timestamp + quote verbatim}`.
+- **Storage vault-only para ESCRITURA.** El skill no ESCRIBE a engram (para andar headless/cron); el cache de análisis y el scan-index viven en el vault. **LEER es distinto y SÍ se hace:** el gate §3.5 (Criterio 8) consulta `_shared` (siempre — es el fallback presente en cualquier run) y engram (`mem_search`, best-effort si disponible) como referencia de decisiones/correcciones previas. Leer no rompe headless porque `_shared` está siempre.
+- **Anti-pattern — reabrir una decisión cerrada (RYR-83, 04-jun).** El skill publicó un `SHOULD FIX` pidiendo tocar una migración (`20260529174011`) que Ignacio había **vetado mover** y que **César mismo ya había validado mantener** en el hilo (`5cc595e1`). El hallazgo era cierto en abstracto (timestamp out-of-order) pero el thread ya lo había **resuelto** con un análisis de impacto. César borró el comentario. Causa: el veredicto no se filtró por las decisiones del hilo ni por la propia validación previa de César. **Cura: Criterio 8 del gate + `--recheck`.** Detalle en engram `apprecio/skills/linear-mention-triage-error-reabrir-decision-cerrada`.
+- **Never post to Linear (default).** El skill redacta; César revisa y postea. (César puede pedir publicar puntualmente — eso es un override suyo, no cambia el default.)
