@@ -48,9 +48,18 @@ Sub-agente **INDEPENDIENTE** — recibe SOLO el post + la rúbrica, NO el contex
 - ⚠️/❌ → 1 reintento de redacción con el feedback exacto.
 - Si el reintento vuelve a fallar → **escalar a César** "de este tema no salió nada a tu altura. Descartá o pasame más material." **No bajar el umbral para forzar un pase.**
 
-### 5 · PROMPT DE IMAGEN
+### 5 · PROMPT DE IMAGEN — infografía estilo "ML TUT"
 
-Generar el prompt para el agente de imágenes de César (él ya tiene el estilo cargado). Plantilla: *"Sigue exactamente el estilo de mis imágenes anteriores (paleta, tipografía, composición, tratamiento). Formato vertical 4:5. Concepto: {visual del insight del post}. Texto en la imagen: mínimo o ninguno / {frase corta}."* César corre la imagen en su agente.
+El estilo de César es una **INFOGRAFÍA EDUCATIVA de una sola página** — sketchnote hecho a mano pero profesional/premium — **NO un diagrama minimalista**. El prompt debe convertir el post en una infografía:
+- **Título handdrawn** (marcador, grande) + subtítulo de una línea.
+- **5-7 bloques numerados** (círculo azul con número), cada uno con un **icono dibujado a mano** + una **frase corta** (palabras clave, no oraciones largas).
+- **Flujos con flechas** donde aplique (ej. find → execute → evaluate → repeat).
+- Un bloque **"IDEA CLAVE"** destacado al cierre.
+- **Destacar visualmente** el bloque del insight central (glow/color).
+- **Paleta con propósito**: azul = títulos · verde = conceptos clave · naranja = advertencias · morado = ejemplos · amarillo = ideas importantes.
+- Fondo blanco, mucho espacio, estilo limpio/manual/premium, formato **vertical**.
+
+El prompt **especifica el contenido exacto de cada bloque** (texto corto), sujeto al mismo check anti-alucinación. César corre la imagen en su agente (que ya tiene el estilo cargado).
 
 ### 6 · OUTPUT + PUBLICACIÓN
 
