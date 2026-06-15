@@ -30,7 +30,7 @@ Global skill: works from any session/cwd. Reads Linear + (on demand) code.
 ## Identity & config (hardcoded)
 
 - **User:** displayName `cmoreno`, id `6a1e659a-ca3d-417f-b460-b62307d9354d`, email `cmoreno@dcanje.com`.
-- **Teams to scan:** Beat (`RYR`, id `ddeaea1c-b29b-45b4-82b2-6cd261c47aa5`), Platform (`PLA`), App Rewards (`APP`).
+- **Teams to scan:** Beat (`RYR`, id `ddeaea1c-b29b-45b4-82b2-6cd261c47aa5`), Platform (`PLA`), App Rewards (`APP`), Product Planning (`PRO`, id `280b014b-1731-4bd9-996a-8b2e7d8370db`). **PRO incluido a propósito:** es donde Nicole/Ignacio hacen discovery/shaping y etiquetan a César como gate técnico ANTES de que el trabajo aterrice en Beat (su lane más temprano). El ruido de PP (issues `Signal` auto-creados por Sentry/Mixpanel) se descarta solo: el clasificador exige mención literal a César. Causa de inclusión: FN real 15/06 — `@cmoreno` en PRO-42 no detectado por estar PRO fuera del scan (rescatado de rebote vía el epic RYR-131 en Beat).
 - **Watch target (`--watch`):** Ignacio = id `1f03f08d-db10-4bf2-8999-499b7842f50c` (handle `@ignacio`). Otros: resolver con `list_users`/`get_user`.
 - **Digest output:** `~/Code/_vault/_work/apprecio/linear/today/{YYYY-MM-DD}-{am|pm}.md` (`am` si hora local < 13:00, si no `pm`). Una corrida = un archivo (no sobrescribir).
 - **scan-index:** `~/Code/_vault/_work/apprecio/linear/scan-index.md` (vault-only, formato §4).
@@ -49,7 +49,7 @@ Schemas: `select:mcp__linear__get_user,mcp__linear__list_issues,mcp__linear__get
 ## Inputs
 
 - `--since <Nd>` — ventana (default `7d` → `updatedAt="-P7D"`).
-- `--teams <KEYS>` — coma-lista (default `RYR,PLA,APP`).
+- `--teams <KEYS>` — coma-lista (default `RYR,PLA,APP,PRO`).
 - `--verify <ISSUE-ID>` — corre **Pass 2** (verificación profunda de código) para un issue en vez del triage completo.
 - `--watch <person>` — **Watch mode**: oportunidades proactivas OPCIONALES sobre las menciones de otra persona (default `ignacio`).
 - `--recheck <ISSUE-ID>` — **re-validación de seguridad (post-borrador)**: corre SOLO el **Criterio 8** del gate §3.5 (decisión-cerrada + memoria) sobre un borrador YA escrito o un comentario YA redactado para ese issue. Cruza el contenido contra (a) las decisiones cerradas del hilo vivo, (b) `_shared`, (c) engram (best-effort). Úsalo cuando ya hay un borrador/comentario y querés confirmar que no reabre una decisión ni contradice una corrección previa antes de publicar. **Input del borrador:** el texto presente en la conversación, o el archivo `~/Code/_vault/_work/apprecio/projects/<proyecto>/issues/<ISSUE-ID>/triage.md` si existe (proyecto por prefijo: RYR→rr; declarar cuál se usó). Devuelve **PASS** o **FAIL con la cita de la decisión que contradice**.
@@ -140,7 +140,7 @@ Digest al path (am/pm, un archivo por corrida). **Sello de hora de corte en el h
 ```markdown
 ---
 last_scan: 2026-06-03T13:39-05   # hora local de corte
-window: 7d · teams: RYR,PLA,APP
+window: 7d · teams: RYR,PLA,APP,PRO
 ---
 | issue | respondió César (fecha) | nota |
 |---|---|---|
