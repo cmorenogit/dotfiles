@@ -47,11 +47,11 @@ Aplicar TODAS las reglas (abajo). Modo experiencia: la historia de César es el 
 **Dos evaluadores INDEPENDIENTES de modelos distintos** — atrapan puntos ciegos que un solo linaje normaliza (sobre todo el "AI slop" con sabor a Claude, que Claude no marca pero otro modelo sí). Cada uno recibe SOLO el post + la rúbrica + las fuentes (para verificar anti-alucinación), NUNCA cómo se escribió.
 
 - **Evaluador A — Claude** — sub-agente vía Task/Agent con la rúbrica dura de abajo.
-- **Evaluador B — ChatGPT vía `pi`** (CLI instalado; OpenAI por **suscripción ChatGPT/Codex**, modelo `gpt-4.1-mini`). No-interactivo:
+- **Evaluador B — ChatGPT vía `pi`** (CLI instalado; OpenAI por **suscripción ChatGPT/Codex**, modelo **`gpt-5.5`** — capaz, razona). No-interactivo:
   ```bash
   pi -p --provider openai --no-tools "<rúbrica + post + fuentes + instrucción: 'responde SOLO el veredicto y los ítems que FALLAN, una línea cada uno'>"
   ```
-  **IMPORTANTE: pedir respuesta CONCISA** (veredicto + solo ítems que fallan, una línea cada uno). Pedir una tabla larga hace **timeout** — la respuesta corta vuelve en segundos. Usar `timeout 90` y pasar el prompt cuidando el quoting (un solo argumento).
+  **NO pasar `--model`** — especificarlo hace que pi busque una API key (que no hay) y falla; sin `--model` usa la suscripción, que ya es gpt-5.5 (verificable con `--mode json` → `"model":"gpt-5.5"`). **Pedir respuesta CONCISA** — gpt-5.5 razona, y una respuesta larga hace **timeout**; el veredicto + ítems fallados en líneas cortas vuelve en segundos. Usar `timeout ≥90`, prompt como un solo argumento.
 
 **Reconciliación — consenso fail-closed:** publicable SOLO si **ambos** dan ✅. Si **cualquiera** marca un bloqueante (alucinación · AI-slop · ángulo forzado · no-obvio · discreción) → fail → **1 reintento** de redacción con el feedback **combinado** de los dos → re-evaluar con ambos. La **discrepancia entre los dos ES señal** — ante diferencia, aplicar el criterio más estricto, no el más indulgente.
 - Si tras el reintento sigue fallando → **escalar a César** "de este tema no salió nada a tu altura. Descartá o pasame más material." **No bajar el umbral para forzar un pase.**
