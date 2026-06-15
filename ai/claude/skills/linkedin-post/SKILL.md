@@ -76,7 +76,8 @@ El prompt **especifica el contenido exacto de cada bloque** (texto corto), sujet
 ### 6 · OUTPUT + PUBLICACIÓN
 
 Presentar: **texto del post** (en bloque) + **prompt de imagen** + nota de ángulo/fuentes + estado del gate (✅).
-Publicación **NO automática** — César corre la imagen y da OK del contenido final; recién ahí se publica vía chrome-devtools (sesión LinkedIn logueada). Verificar el estado del navegador antes. Recordar la línea de transparencia en el caption (`Imagen creada con IA.`). Registrar el post en **`_personal/projects/linkedin/posts/`** (canal LinkedIn, NO `app-profile/` que es la web) — `YYYY-MM-DD-<slug>.md` con tema/ángulo, texto, prompt de imagen, fuentes, estado de gates y un slot de métricas (impresiones · comentarios · visitas al perfil · outcome) para llenar a ~7 días. Sirve para no repetir temas y, con las métricas, aprender qué mueve el outcome.
+Publicación **NO automática** — César corre la imagen y da OK del contenido final; recién ahí se publica vía chrome-devtools (sesión LinkedIn logueada). Verificar el estado del navegador antes. Recordar la línea de transparencia en el caption (`Imagen creada con IA.`). Registrar el post en **`_personal/projects/linkedin/posts/`** (canal LinkedIn, NO `app-profile/` que es la web) — `YYYY-MM-DD-<slug>.md` con tema/ángulo, texto, prompt de imagen, fuentes, estado de gates, **la URL del post** y un slot de métricas (impresiones · comentarios · visitas al perfil · outcome) para llenar a ~7 días.
+- **Tras publicar, PEDIR a César la URL del post** y guardarla en el frontmatter (`url:`) del registro. Es obligatorio — sin la URL no se pueden atar las métricas ni detectar temas duplicados, y es lo que ancla el loop de aprendizaje (qué tema/ángulo mueve el outcome).
 
 ## Reglas de redacción (codificadas — no se renegocian por post)
 
