@@ -49,9 +49,11 @@ Aplicar TODAS las reglas (abajo). Modo experiencia: la historia de César es el 
 - **Evaluador A — Claude** — sub-agente vía Task/Agent con la rúbrica dura de abajo.
 - **Evaluador B — ChatGPT vía `pi`** (CLI instalado; OpenAI por **suscripción ChatGPT/Codex**, modelo **`gpt-5.5`** — capaz, razona). No-interactivo:
   ```bash
-  pi -p --provider openai --no-tools "<rúbrica + post + fuentes + instrucción: 'responde SOLO el veredicto y los ítems que FALLAN, una línea cada uno'>"
+  timeout 120 pi -p --provider openai --no-tools "<prompt ACOTADO>"
   ```
-  **NO pasar `--model`** — especificarlo hace que pi busque una API key (que no hay) y falla; sin `--model` usa la suscripción, que ya es gpt-5.5 (verificable con `--mode json` → `"model":"gpt-5.5"`). **Pedir respuesta CONCISA** — gpt-5.5 razona, y una respuesta larga hace **timeout**; el veredicto + ítems fallados en líneas cortas vuelve en segundos. Usar `timeout ≥90`, prompt como un solo argumento.
+  El prompt debe llevar — en este orden — (1) rol + constraints del perfil en 1-2 líneas, (2) los **bloqueantes como checks cortos** (ángulo genuino · insight no-obvio · alucinaciones con los datos-ancla entre paréntesis · AI-slop · voz sin dos puntos), (3) el post, (4) "responde SOLO el veredicto (PUBLICABLE/AJUSTES/MEDIOCRE) y lo que FALLA, una línea cada uno, máx 5 líneas".
+  - **NO pasar `--model`** — especificarlo hace que pi busque una API key (que no hay) y falla; sin `--model` usa la suscripción, que ya es gpt-5.5 (verificable con `--mode json` → `"model":"gpt-5.5"`).
+  - **Acotar el prompt es OBLIGATORIO, no opcional.** gpt-5.5 razona proporcional al tamaño del input. Verificado — un prompt con la rúbrica completa de 9 ítems (con sus descripciones largas) + fuentes extensas hace **timeout aun con 240s**; el mismo check reducido a ~5 bloqueantes + respuesta concisa vuelve en **<90s** con veredicto válido. Pasar los datos factuales como anclas cortas entre paréntesis (no párrafos de fuentes). Prompt como **un solo argumento** (los saltos de línea internos están OK).
 
 **Reconciliación — consenso fail-closed:** publicable SOLO si **ambos** dan ✅. Si **cualquiera** marca un bloqueante (alucinación · AI-slop · ángulo forzado · no-obvio · discreción) → fail → **1 reintento** de redacción con el feedback **combinado** de los dos → re-evaluar con ambos. La **discrepancia entre los dos ES señal** — ante diferencia, aplicar el criterio más estricto, no el más indulgente.
 - Si tras el reintento sigue fallando → **escalar a César** "de este tema no salió nada a tu altura. Descartá o pasame más material." **No bajar el umbral para forzar un pase.**
