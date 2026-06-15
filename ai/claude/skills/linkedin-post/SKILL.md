@@ -58,7 +58,7 @@ El estilo de César es una **INFOGRAFÍA EDUCATIVA de una sola página** — ske
 - **Destacar visualmente** el bloque del insight central (glow/color).
 - **Paleta con propósito**: azul = títulos · verde = conceptos clave · naranja = advertencias · morado = ejemplos · amarillo = ideas importantes.
 - Fondo blanco, mucho espacio, estilo limpio/manual/premium, formato **vertical**.
-- **Pie de marca** (en TODA infografía — handdrawn, discreto, consistente, sin robar protagonismo): firma **`Cesar Moreno · cesarmoreno.dev`** — la URL viaja con la imagen cuando alguien la guarda o re-postea, llevándola al destino del funnel (su web). Junto a la firma, **`Creado con IA`** — transparencia (abraza la etiqueta C2PA) y on-brand para un AI Product Engineer. En **modo tema**, agregar **`Fuente: {fuente principal del research}`** — credibilidad + el criterio anti-alucinación hecho visible.
+- **Pie de marca** (en TODA infografía — **SUTIL, esto es clave**): una sola línea al pie, en **letra pequeña y color tenue/gris**, que firma sin gritar. Contiene **`Cesar Moreno · cesarmoreno.dev`** (la URL viaja con la imagen al destino del funnel) + **`Creado con IA`** (transparencia, on-brand) + en **modo tema** **`Fuente: {fuente}`** (credibilidad). **NUNCA** mayúsculas grandes, flechas llamativas, logos prominentes ni nada que compita con el contenido. Es una firma discreta, no publicidad — el contenido manda, la marca solo acompaña al pie.
 
 El prompt **especifica el contenido exacto de cada bloque** (texto corto), sujeto al mismo check anti-alucinación. César corre la imagen en su agente (que ya tiene el estilo cargado).
 
