@@ -42,11 +42,21 @@ Sub-agente (Task/Agent, web profundo). Objetivo: el concepto al máximo nivel + 
 
 Aplicar TODAS las reglas (abajo). Modo experiencia: la historia de César es el centro, sin research.
 
-### 4 · GATE DE SALIDA — ¿lo que salió es bueno? (independiente, fail-closed)
+### 4 · GATE DE SALIDA — ¿lo que salió es bueno? (DOBLE, cross-model, fail-closed)
 
-Sub-agente **INDEPENDIENTE** — recibe SOLO el post + la rúbrica, NO el contexto de cómo se escribió (quien escribe es demasiado amable con su propia tarea). Rúbrica dura (abajo). Veredicto: **✅ publicable** · **⚠️ ajustes puntuales** · **❌ mediocre**.
-- ⚠️/❌ → 1 reintento de redacción con el feedback exacto.
-- Si el reintento vuelve a fallar → **escalar a César** "de este tema no salió nada a tu altura. Descartá o pasame más material." **No bajar el umbral para forzar un pase.**
+**Dos evaluadores INDEPENDIENTES de modelos distintos** — atrapan puntos ciegos que un solo linaje normaliza (sobre todo el "AI slop" con sabor a Claude, que Claude no marca pero otro modelo sí). Cada uno recibe SOLO el post + la rúbrica + las fuentes (para verificar anti-alucinación), NUNCA cómo se escribió.
+
+- **Evaluador A — Claude** — sub-agente vía Task/Agent con la rúbrica dura de abajo.
+- **Evaluador B — ChatGPT vía `pi`** (CLI instalado, OpenAI autenticado). No-interactivo:
+  ```bash
+  pi -p --provider openai --no-tools \
+     --system-prompt "<rol de evaluador estricto + la rúbrica>" \
+     "<el post a evaluar + las fuentes para verificar anti-alucinación>"
+  ```
+  Devuelve su veredicto + ítems fallados. (`--mode json` si se quiere parsear estructurado.)
+
+**Reconciliación — consenso fail-closed:** publicable SOLO si **ambos** dan ✅. Si **cualquiera** marca un bloqueante (alucinación · AI-slop · ángulo forzado · no-obvio · discreción) → fail → **1 reintento** de redacción con el feedback **combinado** de los dos → re-evaluar con ambos. La **discrepancia entre los dos ES señal** — ante diferencia, aplicar el criterio más estricto, no el más indulgente.
+- Si tras el reintento sigue fallando → **escalar a César** "de este tema no salió nada a tu altura. Descartá o pasame más material." **No bajar el umbral para forzar un pase.**
 
 ### 5 · PROMPT DE IMAGEN — infografía estilo "ML TUT"
 
