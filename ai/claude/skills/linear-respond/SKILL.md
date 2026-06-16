@@ -34,6 +34,12 @@ Con metadata del PR / naturaleza de la mención (`gh pr view` — files+diffstat
    - **Estado del issue:** `get_issue({ID})` → debe estar en **`In Review`**. Una review formal con el issue en otro estado rompe el ciclo.
    - **Si CUALQUIERA falla → PARÁ la ruta pesada.** NO corras la review ni emitas veredicto. Borrador correcto = **devolución de proceso** (liviana): "para atender la review formal falta {estado In Review / cc a @juli / cc a @ignacio} — corregí y re-solicitá". Solo César puede ordenar continuar igual (override explícito).
    - **Snapshot para el hook:** persistí el estado consultado: `echo "{\"state\":\"<estado>\",\"checked_at\":$(date +%s)}" > ~/.claude/cache/linear-state/{ID}.json` — el hook `linear-write-guard.sh` lo re-valida al publicar (frescura 30 min; re-consultá si expira).
+0.5. **READINESS del PR — VERIFICAR ANTES DE REVISAR CÓDIGO (orden de César; readiness §1 de `readiness-y-evaluacion-pr-issues.md`).** Tu revisión es el paso **PREVIO** al core review de Ignacio — **no en paralelo** (el "QA ‖ code review" de Ignacio es Julieth arrancando QA junto al code review, NO Ignacio revisando junto a vos). Como *stopper técnico*, antes de gastar el pipeline de código confirmá que el PR está **listo de verdad**:
+   - **Pipeline verde** — los checks de CI/ADLC corrieron y pasaron (tests unitarios + servicios): `gh pr checks <PR>`. Rojos o pendientes → no está listo.
+   - **Preview levantado en el ADLC correcto** — entorno de preview arriba (label `deploy:preview` activo).
+   - **Mergeable** — sin conflictos con la base: `gh pr view <PR> --json mergeable,mergeStateStatus`.
+   - **Si falta algo → NO revisés el código a fondo.** El borrador correcto **señala qué falta para estar listo** ("el pipeline está en rojo en {check}", "falta levantar el preview"), como readiness, no como rechazo del código.
+   - **Las URLs de validación** (run del pipeline, preview) las verificás **vos** → van a **"Tu chequeo"**, NO al comentario público (salvo que aporten al destinatario).
 1. **📖 UNDERSTAND** — explicá en lenguaje simple qué pide el issue y **qué propone el PR** (esto va ANTES del borrador). Guardá en `review/issue/{ID}/pr-summary` (B3).
 2. **Correctness** → corré `/pr-review <PR>` (su pipeline 2-pass + su registry de domain-rules por trigger). Código vía lector de 3 capas del triaje Pass 2 (clones read-only, nunca mutar).
 3. **Intención (lente Principal Engineer)** — ¿el PR resuelve lo que el issue pide? trade-offs, esfuerzo proporcional, ¿alternativa más simple?
