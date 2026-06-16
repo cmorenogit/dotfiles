@@ -101,6 +101,8 @@ El objetivo es que César **publique sin iterar**. Por cada 🔴, producir EN ES
 
 **Qué recibe el evaluador:** el borrador + su veredicto; **la fuente citada que RE-LEE él mismo** (vía `comment_id` → el comentario real, no solo la cita que le pasaron — así es independiente en la EVIDENCIA, no solo en el juicio; confirma el quote byte-a-byte); los criterios del perfil; **el hilo COMPLETO** (no solo la cita — para detectar decisiones ya cerradas, Criterio 8); y **la referencia persistida** que re-lee él mismo: `_shared` (**SIEMPRE**: `ignacio-review-criteria.md` + `linear-review-lessons.md` + `learnings-*.md` + `readiness-*.md`), y engram (`mem_search` por ISSUE-ID + tema) **best-effort** — si engram difiere del vault, **gana el vault**. Si al re-leer la fuente el claim base no aparece o cambió → FAIL inmediato (la lectura del redactor era incompleta).
 
+**Frescura (anti-contaminación — anillo 1 del gate de 3 anillos, ver `outcome.md`):** el evaluador recibe el borrador como **artefacto a juzgar** + los hechos crudos (hilo, código, criterios) — **NUNCA la cadena de razonamiento con que el redactor llegó a él**. Juzga el resultado con ojos limpios, no su justificación (es la doctrina "No Mistakes": verificar con contexto fresco que recibe solo los hechos desnudos). Los otros dos anillos son **complementos, no reemplazo**: anillo 2 = cross-model `pi`/gpt-5.5 sobre forma/idioma, **solo en GAUGE pesado** (ver Rules · Idioma); anillo 3 = `verify-citations.sh` determinístico sobre las citas (Criterio 5).
+
 **Cuándo aplica el lente de producto (criterios 1-3, 7):** SOLO si la mención es un **review/decisión técnica en el lane de César**. Para 🔴 **no-review** (feedback interpersonal, gestión, pedido de acceso/secrets) → esos criterios se marcan **N/A** y NO se corre el lente de producto. **Si la mención es de Ignacio o está dirigida a Ignacio, el lente de su perfil NO se usa en absoluto** (evaluar un mensaje a Ignacio con su propio perfil es la trampa de simulación) — solo corren los criterios 4-6.
 
 **Chequeo de decisión cerrada + memoria (Criterio 8) — la barrera que faltó (RYR-83, 04-jun).** Antes de emitir CUALQUIER `MUST FIX`/`SHOULD FIX` o veredicto, el evaluador cruza cada hallazgo contra:
@@ -109,23 +111,42 @@ El objetivo es que César **publique sin iterar**. Por cada 🔴, producir EN ES
 >
 > **Regla dura:** NUNCA contradecir una decisión que César ya validó en el hilo — es el **peor falso positivo** (erosiona su criterio ante el equipo). Si hay info **genuinamente nueva** que justifique reabrir, va como **pregunta/insumo citando la decisión previa**, jamás como condición que da la decisión por no-tomada.
 
+Los criterios se agrupan en los **tres filtros del `outcome.md`**. El **Filtro 1 (pertinencia) es un PRE-GATE**: corre primero, sobre TODA mención (no solo reviews). Si falla, el borrador correcto no es una respuesta de contenido — es no-responder, devolución de proceso o ruteo, y **no se evalúan los filtros 2-3**.
+
+**PRE-GATE · Filtro 1 — PERTINENCIA (¿se debe responder, y le toca a César?)**
+
+| # | Criterio | Aplica a | FAIL si… |
+|---|---|---|---|
+| P1 | **Mención real dirigida a César** | todos | el match fue error de quien etiquetó / narrativo / atributivo (no es un ask real a César) |
+| P2 | **Pedida bien formada para lo que pide** (absorbe el ex-criterio 9, lección RYR-111) | todos | *review formal:* el comentario que la solicita no menciona a **@juli** + **@ignacio**, o el issue no está en **`In Review`**. *Otra mención:* le falta el contexto/los interesados mínimos para que una respuesta tenga sentido. El evaluador re-lee el comentario de la pedida (`comment_id`) y el estado — no confía en lo que le pasaron |
+| P3 | **Le toca a César** (su lane), no solo rutear | todos | el ask es de severidad (Julieth) o scope (Nicole) y lo correcto es rutear, no analizar desde el lane técnico |
+| P4 | **Sigue abierta tras el flujo posterior** | todos | el autor se auto-respondió, otro lo cerró, o la conversación avanzó sin esperar a César (acuse opcional, no respuesta) |
+
+**Filtro 2 — CALIDAD (¿la respuesta cumple el estándar? — solo si pasó el pre-gate)**
+
 | # | Criterio | Aplica a | FAIL si… |
 |---|---|---|---|
 | 1 | **Outcome primero** | review | el problema admite un outcome/métrica de negocio y el borrador no lo nombra |
 | 2 | **Estado + next step + owner** explícitos; si atascado, decisión binaria de scope | review | el próximo paso o el dueño quedan implícitos |
 | 3 | **Causa raíz, no parche; no remueve defensa** (`tenant_id`/RLS) | review con fix | propone parchar el síntoma o quitar una defensa |
-| 4 | **Lane** — técnico; lo de QA/scope va como INSUMO a Julieth/Nicole, no como veredicto | todos | el borrador aprueba QA, decide scope, o invade otro lane |
 | 5 | **Verificación** — **CERO** claims `[inferido]` (sin excepción de "no-decisivo") | todos | queda cualquier `[inferido]` sin `[verificado: file:línea]` |
 | 6 | **Estilo** — confiado, lean, sin hedging/disclaimers/auto-aclaración de lane | todos | hay relleno, dudas ("debería confirmar…") o se justifica de más |
 | 7 | **Veredicto** — cierra con APPROVE/CONDITIONS/CHANGES + MUST/SHOULD/CONSIDER, evidencia `ruta:línea` | review | falta el veredicto o su evidencia |
+| 10 | **Idioma — español mexicano neutral, tono profesional, sin localismos** | todos | hay localismos (de cualquier región), tono no profesional, o el registro no es español mexicano neutral (ver Rules · Idioma) |
+
+**Filtro 3 — CREDIBILIDAD (¿cuida cómo lo ve el equipo?)**
+
+| # | Criterio | Aplica a | FAIL si… |
+|---|---|---|---|
+| 4 | **Lane** — técnico; lo de QA/scope va como INSUMO a Julieth/Nicole, no como veredicto | todos | el borrador aprueba QA, decide scope, o invade otro lane |
 | 8 | **No reabre decisión cerrada / respeta corrección persistida** | todos | el borrador propone (FIX o veredicto) algo que el hilo YA discutió y cerró, **o que contradice un plan que César ya validó**, o una corrección/preferencia/lección registrada en `_shared`/engram |
-| 9 | **Solicitud de review bien formada** (lección RYR-111) | review | el borrador emite veredicto sobre una PEDIDA inválida: el comentario que solicitó la review formal no menciona a **@juli** (QA siguiente) y a **@ignacio** (revisión/merge), o el issue NO está en `In Review`. El evaluador re-lee el comentario de la solicitud (`comment_id`) y el estado del issue — no confía en lo que le pasaron |
+| R3 | **No falsa autoridad fuera de R&R** (applicability gate) | no-rr | el borrador emite veredicto automático sobre un repo que el pipeline no tiene tuneado (fuera de R&R → contexto sin veredicto) |
 
 **Resolución:**
-- **Todos PASS / N/A** → **✅ Listo para publicar**.
-- **FAIL en criterios de contenido/forma (1-4, 6-7)** → el evaluador **reescribe**, **máximo 2 vueltas**. Si tras 2 vueltas un criterio sigue sin cerrar → mostrar el borrador marcado **⚠️ {criterio} no cerró** (no loop infinito; César decide con el dato).
+- **El pre-gate corre primero.** **FAIL en cualquier P (P1-P4 · pertinencia)** → **no hay respuesta de contenido que publicar**. El borrador se reescribe según la causa: **P1** → no es para César (descartar / acuse opcional); **P2** → **devolución de proceso** (liviana: qué le falta a la pedida — p. ej. estado `In Review` / cc a @juli / cc a @ignacio — para re-solicitarla bien); **P3** → **ruteo** al lane correcto (severidad → Julieth, scope → Nicole) sin análisis técnico; **P4** → acuse opcional o nada (ya se cerró). **Si emitía veredicto, se RETIRA.** No se evalúan los filtros 2-3. César puede ordenar override explícito.
+- **Todos PASS / N/A** (pre-gate + filtros 2-3) → **✅ Listo para publicar**.
+- **FAIL en criterios de calidad/forma (1, 2, 3, 4, 6, 7, 10)** → el evaluador **reescribe**, **máximo 2 vueltas**. Si tras 2 vueltas un criterio sigue sin cerrar → mostrar el borrador marcado **⚠️ {criterio} no cerró** (no loop infinito; César decide con el dato).
 - **FAIL en #5 (claim sin verificar)** → **verificación LIGERA inline** SOLO si es confirmar UN hecho citado (≤2 lecturas puntuales: `grep` de un símbolo, leer la línea citada). **Si exige trazar el path entre capas (root cause real) → eso es Pass 2, NO se corre en el triage default:** el borrador se marca **⚠️ No publicable aún — falta verificar {check decisivo}** → `--verify {ISSUE-ID}`. **Un APPROVE nunca puede descansar en `[inferido]`.**
-- **FAIL en #9 (solicitud de review mal formada):** **el veredicto se RETIRA** — no se publica review sobre una pedida inválida. El borrador se reescribe como **devolución de proceso** (liviana): qué le falta a la solicitud (estado `In Review` / cc a @juli / cc a @ignacio) para re-solicitarla bien. César puede ordenar override explícito.
 - **FAIL en #8 (reabre decisión cerrada / choca con corrección persistida)** → **retirar el hallazgo del veredicto** y **recalcular el veredicto sin él** (un SHOULD FIX retirado puede convertir un `APPROVE WITH CONDITIONS` en `APPROVE` limpio — fue exactamente el caso RYR-83). Si el evaluador juzga que hay info **genuinamente nueva** que amerite reabrir → reescribir como **pregunta/insumo citando la decisión previa**, nunca como condición. Jamás dejar en el borrador algo que contradiga una decisión ya cerrada o que César ya validó.
 - **Choque con tu juicio técnico o roce de lane** → el evaluador NO sobrescribe: agrega **⚠️ el perfil prioriza {X} y el borrador no lo cubre** / **⚠️ roza el lane de {Nicole/Julieth} — encuadrado como insumo**. César decide.
 
@@ -229,6 +250,8 @@ Oportunidades proactivas OPCIONALES sobre menciones a OTRA persona (default **Ig
 **Lane.** César es el *technical-standard stopper*: decide SOLO "¿el dev cumplió lo necesario para avanzar a code review?". NO aprueba QA ni merges (→ **Ignacio**), NO es dueño del scope de producto (→ **Nicole**). Los items 🟡 nombran al dueño en vez de redactar respuesta.
 
 **Estilo (borradores).** Confiado y lean: sin disclaimers, sin auto-aclaración de lane, sin hedging ("debería confirmar…"), sin deletrear next-steps asumidos. Liderar con el veredicto, luego la evidencia precisa. Responder lo que se pregunta, nada más.
+
+**Idioma (borradores — Criterio 10 del gate, anillo 2).** Todo borrador que se publica en Linear va en **español mexicano neutral, tono profesional**. Registro de oficina mexicano sin caer en coloquialismo: "tú" (nunca "vos"), sin localismos de NINGUNA región (ni rioplatenses —"acá", "che", "recién" temporal—, ni de otras), sin spanglish evitable (preferir términos en español salvo término técnico sin equivalente: "deploy", "merge", "feature flag"). Profesional y claro, no acartonado. El **anillo 2** del gate (`pi`/gpt-5.5, solo GAUGE pesado) revisa este criterio porque un solo modelo no detecta bien sus propios localismos — el prompt a `pi` lleva el borrador + el check corto "¿español mexicano neutral profesional, sin localismos?" y devuelve PASS / los términos que fallan. **Nota:** esto aplica a los **borradores de Linear** (output al equipo), no a la comunicación con César (que sigue su preferencia de siempre).
 
 **Lente de Ignacio (central — gobierna el contenido del borrador, no solo el tono).** Todo borrador 🔴 se construye y se evalúa (gate §3.5) contra `~/Code/_vault/_work/apprecio/linear/knowledge/ignacio-review-criteria.md` (criterios canónicos de review) + `ignacio-product-profile.md` (contexto de prioridades) — las fuentes de "cómo Ignacio resuelve": cuándo se pasa a code review y cuándo no, qué se considera, qué se omite. El borrador debe: liderar con el **outcome/métrica** de negocio (no el detalle técnico); hacer explícito **estado + next step + dueño nombrado** (+ decisión binaria de scope si está atascado); **root-cause, no parche**; **nunca proponer remover una defensa** (`tenant_id`, RLS); preferir **centralizar lo cross-cutting en la RPC canónica**; `observe` antes de `enforce`; encuadrar lo técnico como **insumo** para el dueño (Julieth=calidad, Nicole=scope), no como veredicto sobre su lane. Para decisiones-a-tomar, su tabla ADLC (`#, Decisión, Opciones, Recomendación, Status`); para reviews, su formato `APPROVE/CONDITIONS/CHANGES` + `MUST/SHOULD/CONSIDER`.
 

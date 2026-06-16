@@ -45,7 +45,18 @@ Con metadata del PR / naturaleza de la mención (`gh pr view` — files+diffstat
 Lee el hilo → borrador confiado tipo chat, sin estructura de veredicto. No toca código.
 Si el draft plantea un curso de acción (modo PROPUESTA del contrato): el gate corre además el kernel K1-K6 del canon (B2). Propuesta/análisis de producto completo → sugerí `/product-lens` antes de draftear.
 
-## 4 · Gate + present (B2)
-Pasá el borrador por el **gate** (sub-agente independiente, salida por criterio, **fail-closed**). Si el veredicto lleva citas `file:línea`: escribí el borrador a un archivo temporal y corré `~/.claude/skills/_shared/scripts/verify-citations.sh <borrador> <clone-local> <ref-del-PR>` — **cualquier FAIL degrada APPROVE→CONDITIONS** (⚠️ cita no verificable). Presentá: explicación → borrador → veredicto/⚠️ → estado del gate (✅ listo / ⚠️ no publicable). **César publica.**
+## 4 · Gate + present (B2 — 3 filtros, 3 anillos)
+Pasá el borrador por el **gate** (B2 del contrato): evaluador fresco, salida por criterio, **fail-closed**. Corre el **pre-gate de PERTINENCIA primero** (P1-P4: ¿mención real? ¿pedida bien formada? ¿le toca a César? ¿sigue abierta?) — si falla, el borrador NO es respuesta de contenido: devolución / ruteo / no-responder, sin evaluar el resto. Si pasa, corre **calidad** (incluye Criterio 10 — español mexicano neutral) y **credibilidad**.
+
+Anillos:
+- **Anillo 1** (siempre) — el evaluador Claude fresco corre los 3 filtros.
+- **Anillo 3** (si el veredicto cita `file:línea`) — escribí el borrador a un temporal y corré `~/.claude/skills/_shared/scripts/verify-citations.sh <borrador> <clone-local> <ref-del-PR>`; **cualquier FAIL degrada APPROVE→CONDITIONS** (⚠️ cita no verificable).
+- **Anillo 2** (SOLO ruta PESADA — GAUGE acotado/sustancial) — cross-model sobre forma/idioma. Prompt ACOTADO (patrón de `linkedin-post` §4): rol + checks cortos (¿español mexicano neutral profesional, sin localismos? · ¿naturalidad, sin sonar a traducción? · ¿responde lo que se preguntó?) + el borrador + "responde SOLO PUBLICABLE/AJUSTES/MEDIOCRE y qué falla, máx 5 líneas":
+  ```bash
+  timeout 120 pi -p --provider openai --no-tools "<prompt acotado>"   # NO pasar --model (usa gpt-5.5 por suscripción)
+  ```
+  Consenso fail-closed: publicable solo si anillo 1 **y** anillo 2 dan ✅; discrepancia → gana el más estricto → reescribe ≤2 vueltas con el feedback combinado.
+
+Presentá: explicación → borrador → veredicto/⚠️ → estado del gate (✅ listo / ⚠️ no publicable). **César publica.**
 
 Si surge una corrección / criterio / miss → **sugerí `/linear-learn`** (no guardes la lección directo — el dedup vive ahí).
