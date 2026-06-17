@@ -52,7 +52,7 @@ Lee el hilo → borrador confiado tipo chat, sin estructura de veredicto. No toc
 Si el draft plantea un curso de acción (modo PROPUESTA del contrato): el gate corre además el kernel K1-K6 del canon (B2). Propuesta/análisis de producto completo → sugerí `/product-lens` antes de draftear.
 
 ## 4 · Gate + present (B2 — 3 filtros, 3 anillos)
-Pasá el borrador por el **gate** (B2 del contrato): evaluador fresco, salida por criterio, **fail-closed**. Corre el **pre-gate de PERTINENCIA primero** (P1-P4: ¿mención real? ¿pedida bien formada? ¿le toca a César? ¿sigue abierta?) — si falla, el borrador NO es respuesta de contenido: devolución / ruteo / no-responder, sin evaluar el resto. Si pasa, corre **calidad** (incluye Criterio 10 — español mexicano neutral) y **credibilidad**.
+Pasá el borrador por el **gate** (B2 del contrato): evaluador fresco, salida por criterio, **fail-closed**. `respond` corre el **perfil completo** del gate (pertinencia + calidad + credibilidad; ver contrato B2 · Perfiles); el atajo de solo-forma para pulir un texto suelto sin contexto de issue es `/linear-voice`. Corre el **pre-gate de PERTINENCIA primero** (P1-P4: ¿mención real? ¿pedida bien formada? ¿le toca a César? ¿sigue abierta?) — si falla, el borrador NO es respuesta de contenido: devolución / ruteo / no-responder, sin evaluar el resto. Si pasa, corre **calidad** (incluye Criterio 10 — español mexicano neutral) y **credibilidad**.
 
 Anillos:
 - **Anillo 1** (siempre) — el evaluador Claude fresco corre los 3 filtros.

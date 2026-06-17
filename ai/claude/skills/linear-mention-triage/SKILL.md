@@ -124,6 +124,8 @@ Los criterios se agrupan en los **tres filtros del `outcome.md`**. El **Filtro 1
 
 **Filtro 2 — CALIDAD (¿la respuesta cumple el estándar? — solo si pasó el pre-gate)**
 
+> **Autocontenidos (perfil forma):** los criterios **6 (estilo)** y **10 (voz humana)** juzgan el texto en sí, sin contexto de issue/código → son los que corre `/linear-voice` (perfil **forma**, ver contrato B2 · Perfiles del gate). Los demás (1, 2, 3, 5, 7) dependen del contexto del review y solo corren en el perfil **completo**. Un criterio de forma nuevo se agrega acá marcado "autocontenido" y `/linear-voice` lo hereda solo.
+
 | # | Criterio | Aplica a | FAIL si… |
 |---|---|---|---|
 | 1 | **Outcome primero** | review | el problema admite un outcome/métrica de negocio y el borrador no lo nombra |
