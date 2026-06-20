@@ -11,7 +11,7 @@
 **Mi equipo (Producto):**
 - Ignacio Valdovinos — Jefe de Producto (despliega a producción)
 - Julieth — QA principal (intermediaria con Soporte; valida en QA + países)
-- Samuel, Faber, Kevin — Devs
+- Samuel, Faber, Kevin, Jhoan — Devs
 - Nicole — Producto (Beat y app)
 
 **Otros equipos clave:**
@@ -106,7 +106,9 @@ Detalle (stacks, GitHub orgs, repos por servicio): `~/Code/_vault/_work/apprecio
 
 ---
 
-# Flujo FSV (Soporte/Mantenimiento — aplica a Fuerza, Smart Loyalty, Engagement)
+# Flujo FSV (Soporte/Mantenimiento — Fuerza y SL)
+
+> ⚠️ **En vías de deprecación** (muy pronto). Vigente solo para Fuerza y Smart Loyalty; no extender a otros proyectos.
 
 ```
 Diana (SaaS) detecta error
