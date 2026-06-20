@@ -3,7 +3,7 @@
 ## Identidad y rol
 - Ingeniero Principal en Apprecio — referente técnico cross-equipo (Producto, Core, Soporte)
 - Jefe directo: Ignacio Valdovinos (Jefe de Producto)
-- Scope: R&R, Fuerza (incluye Incentivos), Smart Loyalty, Engagement
+- Scope: Beat, Fuerza (incluye Incentivos), Smart Loyalty, Engagement
 - NO soy Tech Lead ni Manager (no gestiono personas)
 
 ## Equipo Apprecio
@@ -12,7 +12,7 @@
 - Ignacio Valdovinos — Jefe de Producto (despliega a producción)
 - Julieth — QA principal (intermediaria con Soporte; valida en QA + países)
 - Samuel, Faber, Kevin — Devs
-- Nicole — Producto (R&R y app)
+- Nicole — Producto (Beat y app)
 
 **Otros equipos clave:**
 - Soporte (Caco): Paulina deriva tickets, ejecutan queries de BD
@@ -78,11 +78,13 @@ Conventional Commits en inglés: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`,
 
 | Proyecto | Repo local | Vault path |
 |---|---|---|
-| R&R | `~/Code/work/rr-project/` | `_work/apprecio/projects/rr/` |
+| Beat | `~/Code/work/rr-project/` | `_work/apprecio/projects/rr/` |
 | App mobile | `~/Code/work/app-project/` | `_work/apprecio/projects/app/` |
 | Fuerza | `~/Code/work/fuerza-project/` | `_work/apprecio/projects/fuerza/` |
 | Smart Loyalty | `~/Code/work/sl-project/` | `_work/apprecio/projects/sl/` |
 | Engagement | `~/Code/work/engagement-project/` | `_work/apprecio/projects/engagement/` |
+
+**Nomenclatura — Beat:** el producto antes llamado *R&R* hoy se llama **Beat**. El repo (`rr-project`), el slug del vault (`rr`) y el prefijo de issues en Linear (`RYR-`) conservan el nombre histórico: cuando veas `rr` / `R&R` / `RYR`, se refieren a **Beat**.
 
 **⚠️ Wrappers multi-repo:** `fuerza-project/`, `sl-project/`, `engagement-project/` son directorios LOCAL-ONLY sin git remote. Cada subdirectorio adentro es un repo git independiente. **SIEMPRE** `cd` al subdirectorio antes de operaciones git — nunca commit/push desde el wrapper.
 
@@ -98,7 +100,7 @@ Conventional Commits en inglés: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`,
 | `_bruno/*`, `_services/*`, cross-project | `_work/apprecio/_shared/` | `_shared` |
 | `personal/*` | `_personal/...` | `_personal` |
 
-**Ambientes:** QA + Producción. Sin staging, excepto R&R (dev/staging/prod via Supabase + Cloudflare).
+**Ambientes:** QA + Producción. Sin staging, excepto Beat (dev/staging/prod via Supabase + Cloudflare).
 
 Detalle (stacks, GitHub orgs, repos por servicio): `~/Code/_vault/_work/apprecio/_shared/repos-and-stacks.md`
 
@@ -203,7 +205,7 @@ Si el push falla, resolver y reintentar — no dejarlo a medias.
 
 # Linear (aplica si MCP disponible)
 
-- **Linear** — sistema oficial Apprecio para issue tracking. Workspace: `https://linear.app/apprecio-producto`. Dividido en 4 teams: `RYR` (R&R), `App` (mobile), `Platform` (Fuerza / SL / Engagement; infra / core / soporte), `Product Planning` (discovery, shaping). Es el canal principal de comunicación laboral en línea — cada comentario es comunicación, no solo metadata.
+- **Linear** — sistema oficial Apprecio para issue tracking. Workspace: `https://linear.app/apprecio-producto`. Dividido en 4 teams: `RYR` (Beat), `App` (mobile), `Platform` (Fuerza / SL / Engagement; infra / core / soporte), `Product Planning` (discovery, shaping). Es el canal principal de comunicación laboral en línea — cada comentario es comunicación, no solo metadata.
 
 Para IDs específicos (teams, states, labels) y referencia de tools: `~/Code/_vault/_work/apprecio/_shared/linear-config.md`. Alternativa: usar tools nativos del MCP de Linear (`list_teams`, `list_issue_statuses`, `list_issue_labels`, etc.) para datos frescos.
 
