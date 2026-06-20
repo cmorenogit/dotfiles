@@ -128,34 +128,6 @@ Detalle (templates Issue Linear/PR/Hilo/Mensaje, reglas de formato): `~/Code/_va
 
 ---
 
-# Beads — `bd` (aplica si `bd` disponible y `.beads/` presente)
-
-**Todo issue tracking en repos de trabajo usa bd.** No markdown TODOs, no TaskCreate, no external trackers cuando hay `.beads/`.
-
-**Reglas esenciales:**
-- Prefijo monorepo: `bd create "[servicio] Titulo" -t bug -p 1`
-- Siempre `--json` flag para uso programático
-- Link discovered work: `--deps discovered-from:<parent-id>`
-- Commit `.beads/issues.jsonl` junto con cambios de código
-- `bd ready` antes de preguntar "qué hago?"
-
-**Inicialización proyecto nuevo:**
-```bash
-bd config set dolt.auto-commit off
-cat > .beads/config.yaml <<'YAML'
-auto-start-daemon: true
-backup:
-  enabled: false
-  git-push: false
-dolt.auto-commit: "off"
-YAML
-```
-
-**Prioridades:** `0` Critical | `1` High | `2` Medium (default) | `3` Low | `4` Backlog
-**Tipos:** `bug` | `feature` | `task` | `epic` | `chore`
-
----
-
 # Memoria persistente y aprendizajes
 
 **Principio:** los aprendizajes valiosos sobreviven entre sesiones. Antes de empezar una tarea conocida, buscar contexto previo; al terminar, persistir lo no obvio.
@@ -191,7 +163,6 @@ Una sesión no termina hasta que `git push` sea exitoso. Workflow obligatorio:
 4. **Push obligatorio:**
    ```bash
    git pull --rebase
-   bd sync          # solo si el repo usa beads (.beads/ presente)
    git push
    git status       # debe mostrar "up to date with origin"
    ```
