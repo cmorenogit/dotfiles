@@ -7,7 +7,7 @@ Source of truth único para Claude Code, OpenCode y Pi. Cada CLI consume estos `
 | Archivo | Audiencia | Activo en |
 |---|---|---|
 | `AGENTS.md` | Universal — los 3 CLIs | Claude (via @import), OpenCode, Pi |
-| `CLAUDE.local.md` | Claude Code only (SDD orchestrator + engram + skills) | Claude (via @import) |
+| `CLAUDE.local.md` | Claude Code only (engram + auto-memory + entorno) | Claude (via @import) |
 | `OPENCODE.local.md` | OpenCode only (engram protocol) | Versionado, inyección TBD |
 | `PI.local.md` | Pi only (placeholder) | Versionado, inyección TBD |
 

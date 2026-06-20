@@ -254,7 +254,7 @@ Si es standalone (sin parent), advertir:
 
 **Filenames:** kebab-case sin tildes. Primer H1 del cuerpo = display title (no usar frontmatter `title`).
 
-**Drive:** read-only. Solo `/prd` toca Drive (lee PRDs externos). Sharing manual con `gws-drive` ad-hoc cuando se pida.
+**Drive:** read-only. Acceso ad-hoc vía `gws-drive` cuando se pida (lectura de PRDs externos u otros docs).
 
 **Acceso desde herramientas:**
 - Lectura y escritura: cualquier CLI con permisos sobre `~/Code/_vault`.
