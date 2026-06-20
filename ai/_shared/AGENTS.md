@@ -182,34 +182,6 @@ Si el push falla, resolver y reintentar — no dejarlo a medias.
 
 Para IDs específicos (teams, states, labels) y referencia de tools: `~/Code/_vault/_work/apprecio/_shared/linear-config.md`. Alternativa: usar tools nativos del MCP de Linear (`list_teams`, `list_issue_statuses`, `list_issue_labels`, etc.) para datos frescos.
 
-## Antes de publicar comentario en Linear (`mcp__linear__save_comment`)
-Verificar siempre:
-1. **¿Es reply?** Si responde a alguien, DEBE tener `parentId`. Sin parent fragmenta hilos.
-2. **¿Tiene @mención?** Sin mención, el destinatario no recibe notificación.
-3. **¿Tiene call to action?** Debe quedar claro qué se espera del destinatario.
-
-Si falta alguno, advertir antes de publicar:
-```
-⚠️ Pre-Linear Comment:
-  [ ] parentId: {presente/FALTA}
-  [ ] @mención: {presente/FALTA}
-¿Publicar así o corregir?
-```
-
-## Antes de crear issue en Linear (`mcp__linear__save_issue`, solo al crear)
-Verificar:
-1. **¿Puede ser hilo en un issue existente?** Regla de Ignacio: "no crear issues sin consultarme; si se resuelve en una sesión, va como hilo del issue existente".
-2. **¿Tiene parentId si es subissue?**
-3. **¿Tiene descripción con contexto?**
-
-Si es standalone (sin parent), advertir:
-```
-⚠️ Pre-Linear Issue:
-  Issue standalone (sin parent).
-  ¿Consultaste con Ignacio? ¿Puede ser hilo en un issue existente?
-¿Crear así o ajustar?
-```
-
 ---
 
 # Vault — cerebro único
