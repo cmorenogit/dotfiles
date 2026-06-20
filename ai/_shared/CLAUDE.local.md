@@ -4,12 +4,12 @@
 
 ## Entorno
 - Plugins activos: `engram` (memoria persistente) + `worktrunk` (worktrees)
-- Claude Code solo carga lo que está referenciado vía `@import` en `~/.claude/CLAUDE.md`. **No hay carga automática** de `~/.claude/memory/` ni hooks que lo inyecten.
+- Claude Code carga los `@import` de `~/.claude/CLAUDE.md` **y** el auto-memory **por proyecto** `~/.claude/projects/<cwd-slug>/memory/MEMORY.md` (lo inyecta el harness solo, sin `@import`; el `MEMORY.md` es el índice y cada hecho vive en su propio `.md`). El dir global `~/.claude/memory/` es un stub histórico (migración 2026-05-04) y **no** se carga.
 
 ## Información organizacional de Apprecio
-Roster de equipo, mapping de proyectos, configs de Linear/JIRA y procesos detallados viven en el vault: `~/Code/_vault/_work/apprecio/_shared/`. Buscar ahí cuando se necesite contexto profundo de Apprecio que no esté en el AGENTS.md universal.
+Roster de equipo, mapping de proyectos, configs de Linear y procesos detallados viven en el vault: `~/Code/_vault/_work/apprecio/_shared/`. Buscar ahí cuando se necesite contexto profundo de Apprecio que no esté en el AGENTS.md universal.
 
-Lo crítico (resumen de equipo, mapping cwd→vault, regla wrappers multi-repo, flujo FSV resumido, setup Linear/JIRA, reglas de Beads) ya vive en AGENTS.md universal.
+Lo crítico (resumen de equipo, mapping cwd→vault, regla wrappers multi-repo, flujo FSV resumido, setup Linear, reglas de Beads) ya vive en AGENTS.md universal.
 
 ---
 
