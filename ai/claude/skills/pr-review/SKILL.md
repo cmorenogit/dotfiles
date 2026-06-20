@@ -275,7 +275,7 @@ Unless `--skip-scope` or PR has ≤20 files:
 - Classify files: IN-SCOPE / RELATED-RISKY / OUT-OF-SCOPE / INCOMPLETE
 - Report scope score (1-10) and out-of-scope findings
 
-> **Lente de producto (puntero, no pipeline):** este review es TÉCNICO (seguridad / scope / tests). El lente de PRODUCTO de un cambio no vive acá — vive en `/product-lens` (propuestas) y en el kernel K1-K6 del Product Decision Canon que corre el gate del flujo linear (B2 de `_shared/linear-contract.md`). Si en el scope audit un OUT-OF-SCOPE tiene implicación de producto (toca un outcome, deja a un actor invisible → K1/K4 del canon), repórtalo como **insumo para el dueño del scope**, nunca como veredicto de alcance. No corras el kernel completo en cada PR; es ruido fuera de propuestas.
+> **Lente de producto (puntero, no pipeline):** este review es TÉCNICO (seguridad / scope / tests). El lente de PRODUCTO no vive acá — lo maneja el flujo de `/linear-respond` (skill `producto`). Si en el scope audit un OUT-OF-SCOPE tiene implicación de producto (toca un outcome, deja a un actor invisible), repórtalo como **insumo para el dueño del scope**, nunca como veredicto de alcance.
 
 ---
 

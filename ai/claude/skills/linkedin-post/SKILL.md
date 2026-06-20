@@ -42,21 +42,13 @@ Sub-agente (Task/Agent, web profundo). Objetivo: el concepto al máximo nivel + 
 
 Aplicar TODAS las reglas (abajo). Modo experiencia: la historia de César es el centro, sin research.
 
-### 4 · GATE DE SALIDA — ¿lo que salió es bueno? (DOBLE, cross-model, fail-closed)
+### 4 · GATE DE SALIDA — ¿lo que salió es bueno? (fail-closed)
 
-**Dos evaluadores INDEPENDIENTES de modelos distintos** — atrapan puntos ciegos que un solo linaje normaliza (sobre todo el "AI slop" con sabor a Claude, que Claude no marca pero otro modelo sí). Cada uno recibe SOLO el post + la rúbrica + las fuentes (para verificar anti-alucinación), NUNCA cómo se escribió.
+**Evaluador independiente — Claude** — un sub-agente vía Task/Agent que recibe SOLO el post + la rúbrica + las fuentes (para verificar anti-alucinación), NUNCA cómo se escribió, y lo juzga contra la rúbrica dura de abajo.
 
-- **Evaluador A — Claude** — sub-agente vía Task/Agent con la rúbrica dura de abajo.
-- **Evaluador B — ChatGPT (GPT-5.5) vía `pi`** — un modelo de otro linaje atrapa el "AI slop" con sabor a Claude que Claude normaliza. Invocación vía el helper del skill `cross-validate` (resuelve flags, timeout, parser y el freno anti-razonamiento — fuente de verdad del patrón `pi`):
-  ```bash
-  ~/.claude/skills/cross-validate/pi-eval.sh "<prompt ACOTADO>"
-  ```
-  El prompt debe llevar — en este orden — (1) rol + constraints del perfil en 1-2 líneas, (2) los **bloqueantes como checks cortos** (ángulo genuino · insight no-obvio · alucinaciones con los datos-ancla entre paréntesis · AI-slop · voz sin dos puntos), (3) el post, (4) "responde SOLO el veredicto (PUBLICABLE/AJUSTES/MEDIOCRE) y lo que FALLA, una línea cada uno, máx 5 líneas".
-  - El helper imprime solo la respuesta del modelo; exit `1` = sin respuesta (acortá el input y reintentá), exit `2` = `pi` no instalado. Usa gpt-5.5 por suscripción ChatGPT (OAuth).
-  - **Acotar el prompt es OBLIGATORIO, no opcional.** gpt-5.5 razona proporcional a cuánto lo invita el prompt — el helper antepone "juicio inmediato, sin razonar paso a paso", pero igual mantené pocos bloqueantes + respuesta concisa, con los datos factuales como anclas cortas entre paréntesis (no párrafos de fuentes). Prompt como **un solo argumento** (los saltos de línea internos están OK).
+> **Nota (jun 2026):** el segundo evaluador cross-model (GPT-5.5 vía `pi`) se retiró al eliminar `cross-validate` — es otro concepto de verificación. Hoy queda el gate de un solo evaluador; la verificación de linkedin-post se revisa aparte cuando se retome el sistema de marca personal.
 
-**Reconciliación — consenso fail-closed:** publicable SOLO si **ambos** dan ✅. Si **cualquiera** marca un bloqueante (alucinación · AI-slop · ángulo forzado · no-obvio · discreción) → fail → **1 reintento** de redacción con el feedback **combinado** de los dos → re-evaluar con ambos. La **discrepancia entre los dos ES señal** — ante diferencia, aplicar el criterio más estricto, no el más indulgente.
-- Si tras el reintento sigue fallando → **escalar a César** "de este tema no salió nada a tu altura. Descartá o pasame más material." **No bajar el umbral para forzar un pase.**
+**Reconciliación — fail-closed:** publicable SOLO si el evaluador da ✅. Si marca un bloqueante (alucinación · AI-slop · ángulo forzado · no-obvio · discreción) → fail → **1 reintento** de redacción con el feedback → re-evaluar. Si tras el reintento sigue fallando → **escalar a César** "de este tema no salió nada a tu altura. Descartá o pasame más material." **No bajar el umbral para forzar un pase.**
 
 ### 5 · PROMPT DE IMAGEN — infografía estilo "ML TUT"
 

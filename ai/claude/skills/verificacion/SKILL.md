@@ -22,6 +22,17 @@ Mecanismo para que ningún claim entre a una respuesta sin trazarse a una fuente
 3. **Verificá.** Trazá a `ruta:línea` / URL / output real. Si no alcanzás la fuente → marcá ❓ y nombrá el check decisivo; no lo des por cierto.
 4. **Reportá:** PASS (con la evidencia) | FALTA (qué no se pudo confirmar). Una memoria/caché > ~48h se re-verifica fresca antes de contar como PASS.
 
+## Leer código de Beat sin alucinar
+
+Clones **read-only** en `~/Code/work/rr-project/`: front `app-rr-cesar` (`ivaldovinos-app/ryr-39255`), back `back-pulse-cesar` (`ivaldovinos-app/apprecio-pulse`). `git -C <base> fetch -q` y `git -C <base> grep -n '<patrón>' <ref>` leen cualquier rama **sin checkout**. NUNCA `checkout` / `pull` / `merge` en los clones.
+
+Guardas (las que evitan el falso positivo):
+- Confirmá que el componente está **renderizado** (grep su uso — el dead code es trampa).
+- Seguí el **campo exacto** que consume la UI; "correcto en otro lado" ≠ "correcto en el campo consumido".
+- La RPC / función backend es la definición **más nueva** (`CREATE OR REPLACE` — grep todas, leé la última).
+- Para la **completitud de un fix**, enumerá los paths hermanos (un fix sobre un campo/constraint compartido debe cubrir todos sus writers).
+- **Feature flags:** antes de recomendar "seed `<flag>`", `grep_repo(pulse,'<flag>')` — **0 matches = nunca fue flag backend → el fix es quitar el gate en el front**, no seedear (mandar a Soporte a perseguir un fantasma es el peor falso positivo).
+
 ## Readiness de un PR
 
 Cargá `reglas-readiness/<proyecto>.md` y verificá cada regla con `gh`. El archivo de reglas es **DATA** — para sumar un check o un proyecto nuevo, se edita ese archivo, no este skill.
