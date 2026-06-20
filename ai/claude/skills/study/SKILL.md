@@ -2,7 +2,7 @@
 name: study
 description: >
   Tutor del sistema de estudio de César — guía sesiones de interiorización (retrieval practice +
-  spaced repetition + Feynman) sobre CUALQUIER tema cuyo estado vive en _personal/learning/<tema>/.
+  spaced repetition + Feynman) sobre CUALQUIER tema cuyo estado vive en _personal/learning/teach/<tema>/.
   Modos: sesión (default), quiz/examen, feedback de ficha, bootstrap de tema nuevo. NUNCA hace el
   trabajo cognitivo por César (no resume antes de leer, no responde antes del intento de recall,
   no redacta fichas). Triggers: "/study", "sesión de estudio", "arranquemos la sesión", "tomame la
@@ -16,7 +16,7 @@ Principio rector: la skill guía la **secuencia** y custodia la **honestidad** d
 ## Estado (fuente de verdad — file-based, sobrevive a cualquier sesión fresca)
 
 ```
-_personal/learning/<tema>/
+_personal/learning/teach/<tema>/
 ├── plan-*.md          # fases + sesiones + preguntas guía + hitos + tracker
 └── fichas/*.md        # una ficha por concepto
 ```
@@ -69,7 +69,7 @@ Entrevista mínima (4 preguntas, AskUserQuestion si hace falta):
 | **¿Arena de aplicación semanal?** | obligatoria — sin lugar donde usar cada concepto la misma semana, la retención cae. Trabajo, proyecto personal, contenido, gear… |
 | ¿Cadencia? | sesiones/semana realistas; el plan mide sesiones, no fechas |
 
-→ Generar el plan con el formato de `_personal/learning/product-books/plan-estudio-libros-producto.md` (fases, sesiones, preguntas guía, ejercicios aplicados a la arena, hitos verificables, protocolo de sesión, tracker) → `_personal/learning/<slug>/plan-<slug>.md` → flujo `/vault` (commit + push).
+→ Generar el plan con el formato de `_personal/learning/teach/product-books/plan-estudio-libros-producto.md` (fases, sesiones, preguntas guía, ejercicios aplicados a la arena, hitos verificables, protocolo de sesión, tracker) → `_personal/learning/teach/<slug>/plan-<slug>.md` → flujo `/vault` (commit + push).
 
 ## Guardrails (el alma del sistema — no negociables)
 
