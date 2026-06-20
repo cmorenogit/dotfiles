@@ -37,6 +37,7 @@ NO elijas entre las opciones que trae el dev — **cuestioná la premisa**.
 
 - Pasá el borrador por `voz`: @mención al destinatario al inicio, español neutro y humano, no extenso, lo denso (reporte de pr-review, diff) en un bloque ``` .
 - **Auto-chequeo antes de mostrar:** ¿no invado otro lane? ¿no reabro una decisión cerrada? ¿cada claim está verificado o marcado ❓? ¿pasó por `voz`?
+- **Estado binario — LISTO o BLOQUEADO, nunca a medias.** Si al borrador le falta un dato que solo César tiene, o un claim sin verificar, está **BLOQUEADO**: NO lo entregues en bloque limpio para copiar — un hueco (`<completar>`, un valor que no tenés) se publica por accidente. Mostrá qué falta y ofrecé completarlo o partir la respuesta; el borrador en bloque sale **recién cuando está entero**. "Tu chequeo" es para verificar, nunca para tapar un hueco.
 - **Mostrá el borrador para revisión. NUNCA postees — César publica.** Cerrá con **"Tu chequeo"**: lo que solo César debe confirmar antes de publicar.
 
 > Fuera de Beat: si el proyecto no tiene `reglas-readiness/<proyecto>.md`, el readiness es manual (sin verificación automática) — decílo y no apliques las reglas de Beat a otro repo.

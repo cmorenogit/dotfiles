@@ -15,6 +15,7 @@ Toma el contenido de una respuesta y lo deja listo para pegar en Linear: que se 
 4. **Técnico solo si la situación lo amerita.** Si el punto se entiende sin el detalle técnico, omitilo.
 5. **Lo denso va en bloque de código.** Un reporte de pr-review, logs, una tabla larga o un diff → dentro de un bloque ``` para que no ahogue el mensaje.
 6. **Mostrá el borrador para revisión.** NUNCA postees — César publica.
+7. **Sin huecos en el bloque copiable.** Si al texto le falta un dato (un valor que no tenés, un campo a completar), NO lo entregues en bloque listo para copiar — eso invita a publicar el hueco. Marcá el borrador como **incompleto**, nombrá qué falta, y el bloque limpio sale recién cuando está entero.
 
 ## Salida
 
