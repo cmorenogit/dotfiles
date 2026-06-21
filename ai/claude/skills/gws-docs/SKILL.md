@@ -149,49 +149,9 @@ gws drive files update --params '{"fileId": "DOC_ID", "addParents": "FOLDER_ID",
 
 ## Transcription Workflow
 
-For processing Google Meet transcriptions into weekly summaries:
+**Para traer transcripciones de Meet usá la skill dedicada `/transcripcion`**, no este flujo. Resuelve por lenguaje natural, busca global (incluye reuniones compartidas por otros) y extrae el verbatim completo de forma confiable.
 
-1. **Find the transcription:**
-```bash
-gws drive files list --params '{"q": "\"19ruxoV_h2P1WOqqx2_l1i4s9dkL7W4Tx\" in parents and name contains \"Product\"", "pageSize": 5, "fields": "files(id,name,modifiedTime)", "orderBy": "modifiedTime desc"}'
-```
-
-2. **Read the transcription content:**
-```bash
-gws docs documents get --params '{"documentId": "DOC_ID"}' 2>&1 | python3 -c "
-import json, sys
-def extract_text(doc):
-    text = []
-    for element in doc.get('body', {}).get('content', []):
-        if 'paragraph' in element:
-            for elem in element['paragraph'].get('elements', []):
-                run = elem.get('textRun', {})
-                if 'content' in run:
-                    text.append(run['content'])
-    return ''.join(text)
-doc = json.load(sys.stdin)
-print(extract_text(doc))
-"
-```
-
-3. **Save locally for /ingest processing:**
-```bash
-# Pipe to local file for ingest
-gws docs documents get --params '{"documentId": "DOC_ID"}' 2>&1 | python3 -c "
-import json, sys
-def extract_text(doc):
-    text = []
-    for element in doc.get('body', {}).get('content', []):
-        if 'paragraph' in element:
-            for elem in element['paragraph'].get('elements', []):
-                run = elem.get('textRun', {})
-                if 'content' in run:
-                    text.append(run['content'])
-    return ''.join(text)
-doc = json.load(sys.stdin)
-print(extract_text(doc))
-" > transcripts/YYYY-MM-DD-tipo-descripcion.md
-```
+> ⚠️ **Gotcha que rompía este flujo:** los docs "Notas de Gemini" tienen **pestañas** (tabs): *"Las notas"* (resumen) y *"Transcripción"* (verbatim). Un `documents.get` normal devuelve **solo el resumen** — el verbatim vive en una pestaña que la API **no** retorna salvo que pases `includeTabsContent: true` y recorras `tabs[].documentTab.body`. Ver `~/.claude/skills/transcripcion/transcripcion.py`.
 
 ## Common Queries
 
