@@ -29,7 +29,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "mcp__linear__save_comment|mcp__linear__save_issue|mcp__linear__delete_comment",
+        "matcher": "mcp__linear__save_.*|mcp__linear__delete_.*|mcp__linear__create_.*",
         "hooks": [
           {
             "type": "command",
