@@ -13,19 +13,21 @@ Unificado para todas las fuentes. Mantiene `type` = la fuente (como el corpus ex
 ```yaml
 ---
 title: "Título legible de la fuente"
-url: "https://…"
-type: youtube | tweet | web | tiktok      # la fuente
-author: "Canal / @handle / autor"
-date: 2026-06-14              # publicación de la fuente
-processed: 2026-06-21         # descarga (hoy) — y es la fecha del NOMBRE del archivo
-duration_min: 74              # solo audio/video; omitir si no aplica
+url: "https://…"             # opcional — se omite en modo paste
+type: youtube | tweet | web | tiktok | paste   # la fuente; paste = contenido pegado sin origen
+author: "Canal / @handle / autor"   # opcional — se omite si no se identifica
+date: 2026-06-14             # publicación de la fuente; se omite si no se conoce (modo paste)
+processed: 2026-06-21        # descarga (hoy) — y es la fecha del NOMBRE del archivo
+duration_min: 74             # solo audio/video; omitir si no aplica
 status: pending
-tags: [tema, tema]            # 3-7, kebab, inglés salvo nombres propios
+tags: [tema, tema]           # 3-7, kebab, inglés salvo nombres propios
 related: ["[[…]]", "[[…]]"]
 ---
 ```
 
 **Nombre del archivo:** `<processed>-<slug>.md` — la fecha es la de **descarga** (hoy), no la de publicación. Así las notas se ordenan por cuándo las consumiste, no por cuándo se publicó el contenido.
+
+**Modo paste** (contenido pegado, sin URL): `type: paste`, carpeta `learning/paste/`. `url`, `author` y `date` se **omiten** si no se identifican (no inventes). La sección Fuente declara que vino pegado, así el lector sabe que no hay fuente verificable.
 
 ## Molde de la nota
 
@@ -54,7 +56,7 @@ Prosa humanizada, no bullets sueltos.
 - [[wikilink]] — por qué se conecta
 
 ## Fuente
-- [{tipo}]({url}) · {author} · {duration_min} min
+- [{tipo}]({url}) · {author} · {duration_min} min     # o, en paste: "Contenido pegado, sin URL ni autor identificado."
 ```
 
 **Profundidad proporcional a la fuente:** un tweet usa TL;DR + Resumen + Puntos clave; un curso de 6 h despliega secciones por módulo. No fuerces secciones vacías.
