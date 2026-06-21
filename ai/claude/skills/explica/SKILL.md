@@ -1,16 +1,16 @@
 ---
-name: llano
-description: Explica en lenguaje llano lo denso o técnico de la sesión para que puedas decidir — qué es, por qué importa, qué puede salir mal y qué tenés que decidir. Trae el ángulo de producto si hay una decisión de scope. Solo a mano (/llano).
+name: explica
+description: Explica en lenguaje llano lo denso o técnico de la sesión para que puedas decidir — qué es, por qué importa, qué puede salir mal y qué tenés que decidir. Trae el ángulo de producto si hay una decisión de scope. Solo a mano (/explica).
 disable-model-invocation: true
 ---
 
-# llano — aterrizá lo denso para poder decidir
+# explica — aterrizá lo denso para poder decidir
 
 Cuando en una sesión hay algo técnico o denso que no terminaste de captar y necesitás entenderlo para **tomar una decisión**, esto lo baja a lenguaje que cualquiera entendería — claro, corto, asimilable de un vistazo. No es un resumen para archivar; es para que decidas con criterio.
 
 ## Qué aterrizar
 
-Lo técnico o denso que está en el contexto y bloquea tu decisión. Si no señalás nada, tomá lo último relevante de la sesión. Si pasás algo (`/llano <esto>`), eso.
+Lo técnico o denso que está en el contexto y bloquea tu decisión. Si no señalás nada, tomá lo último relevante de la sesión. Si pasás algo (`/explica <esto>`), eso.
 
 ## Cómo explicar (Feynman)
 
