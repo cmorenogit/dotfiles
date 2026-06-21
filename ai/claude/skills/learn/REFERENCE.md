@@ -16,19 +16,20 @@ title: "Título legible de la fuente"
 url: "https://…"
 type: youtube | tweet | web | tiktok      # la fuente
 author: "Canal / @handle / autor"
-date: 2026-06-21              # publicación de la fuente
-processed: 2026-06-21         # hoy
+date: 2026-06-14              # publicación de la fuente
+processed: 2026-06-21         # descarga (hoy) — y es la fecha del NOMBRE del archivo
 duration_min: 74              # solo audio/video; omitir si no aplica
 status: pending
 tags: [tema, tema]            # 3-7, kebab, inglés salvo nombres propios
-transcript: "[[2026-06-21-slug-fuente]]"   # capa B; omitir si no hubo transcripción
 related: ["[[…]]", "[[…]]"]
 ---
 ```
 
-## Molde de la nota (capa A)
+**Nombre del archivo:** `<processed>-<slug>.md` — la fecha es la de **descarga** (hoy), no la de publicación. Así las notas se ordenan por cuándo las consumiste, no por cuándo se publicó el contenido.
 
-Núcleo **fijo** (siempre, en este orden) + cuerpo **adaptativo** entre Resumen y Lectura crítica.
+## Molde de la nota
+
+Núcleo **fijo** (siempre, en este orden) + cuerpo **adaptativo** entre Resumen y Lectura crítica. La nota es el **único artefacto** (no se guarda transcripción), así que debe ser auto-suficiente.
 
 ```
 # {título}
@@ -53,8 +54,7 @@ Prosa humanizada, no bullets sueltos.
 - [[wikilink]] — por qué se conecta
 
 ## Fuente
-- [{tipo}]({url}) · {duration_min} min
-- Transcripción: [[YYYY-MM-DD-slug-fuente]]
+- [{tipo}]({url}) · {author} · {duration_min} min
 ```
 
 **Profundidad proporcional a la fuente:** un tweet usa TL;DR + Resumen + Puntos clave; un curso de 6 h despliega secciones por módulo. No fuerces secciones vacías.
@@ -65,18 +65,3 @@ Prosa humanizada, no bullets sueltos.
 - **Sin** `@mención` ni formato de comentario Linear (eso es de `voz`, no de acá).
 - Lo denso (logs, código, tablas largas de la fuente) va en bloques de código.
 - Primera persona al conectar con tu stack; nunca telegráfico ni jerga de máquina.
-
-## Transcripción (capa B)
-
-Archivo en `<source>/_sources/YYYY-MM-DD-slug-fuente.md`. Encabezado mínimo + el verbatim:
-
-```
-# Fuente · {título}
-- {url} · {author} · {date} · método: {subtitles | whisper | webfetch}
-
----
-
-{transcripción / contenido crudo}
-```
-
-El nombre lleva sufijo `-fuente` para que el wikilink sea único en Obsidian y no colisione con la nota.
