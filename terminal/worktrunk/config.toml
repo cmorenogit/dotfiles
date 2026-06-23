@@ -1,0 +1,43 @@
+# Beat worktree pair automation (user config)
+#
+# Propósito:
+#   - Crear automáticamente el worktree espejo en el repo pareado (backoffice ↔ app colaborador).
+#   - Escribir CLAUDE.local.md en ambos worktrees con política Beat + Engram.
+#   - Ignorar CLAUDE.local.md en .git/info/exclude (local al clon, no se commitea).
+#
+# Gate: el hook solo actúa si el remote URL del repo coincide con Beat (apprecio-pulse o ryr-).
+# Otros proyectos (fuerza, smart-loyalty, engagement, etc.) no se ven afectados.
+#
+# User hooks no requieren approval (son tuyos, no vienen de un proyecto externo).
+
+[pre-start]
+pair-beat = 'bash "$HOME/.config/worktrunk/scripts/beat-pair.sh" "{{ worktree_path }}" "{{ branch }}" "{{ branch | sanitize }}"'
+
+[post-switch]
+refresh-beat = '''
+set +e
+remote=$(git -C "{{ worktree_path }}" config --get remote.origin.url 2>/dev/null || echo "")
+case "$remote" in
+  *apprecio-pulse*|*ryr-app*|*ryr-39255*) ;;
+  *) exit 0 ;;
+esac
+# CLAUDE.local.md ignorado localmente (idempotente, no se commitea)
+common_dir=$(cd "{{ worktree_path }}" && cd "$(git rev-parse --git-common-dir)" && pwd)
+grep -qxF "CLAUDE.local.md" "$common_dir/info/exclude" 2>/dev/null || echo "CLAUDE.local.md" >> "$common_dir/info/exclude"
+# Regenerar el CLAUDE.local.md rico delegando en beat-isolate --doc-only (lee el slot ya asignado).
+(cd "{{ worktree_path }}" && bash "$HOME/.config/worktrunk/scripts/beat-isolate.sh" --doc-only) 2>/dev/null || true
+'''
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Flujo PERSONAL de worktrees Beat (worktrunk). Scoped al repo apprecio-pulse vía
+# user config → NO toca el repo y NO requiere approval (los project hooks sí).
+# Dispara mi script personal de aislamiento; el del equipo queda intacto.
+# ─────────────────────────────────────────────────────────────────────────────
+[projects."github.com/ivaldovinos-app/apprecio-pulse"]
+# beat-prep ya NO corre en post-start: se encadenó al final de pair-beat (pre-start, foreground)
+# para que su reporte se vea al crear. Acá queda la limpieza simétrica al remover.
+# pre-remove (BLOQUEANTE, corre en el back antes de borrarlo): beat-unpair para+borra
+# los containers del slot y remueve el worktree+rama par del app (modo SEGURO: si el app
+# tiene cambios sin commitear lo deja y lo marca ✗). Reporte visual espejo de beat-prep.
+# Nunca aborta (sale 0) → el back se elimina igual.
+pre-remove.unpair-beat = 'bash "$HOME/.config/worktrunk/scripts/beat-unpair.sh" "{{ branch }}"'
