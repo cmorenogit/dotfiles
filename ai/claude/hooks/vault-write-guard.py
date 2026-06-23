@@ -40,7 +40,7 @@ RETIRED = (
 # --- disciplina anti-fragmentacion (skill /vault) ---
 TYPE_ENUM = {
     "analisis", "propuesta", "plan", "review", "investigacion", "postmortem",
-    "nota", "referencia", "triage", "handoff", "borrador", "prd",
+    "nota", "referencia", "triage", "handoff", "borrador", "prd", "sintesis",
 }
 PROJECTS_RE = re.compile(r"^_work/apprecio/projects/[^/]+/")
 # colecciones bajo projects/: un archivo por entidad, no se consolida
