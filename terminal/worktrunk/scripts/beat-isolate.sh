@@ -147,20 +147,100 @@ write_claude_local() {
   local pair_line
   if [ -d "$pair_dir" ]; then pair_line="- Path: $pair_dir"
   else pair_line="- (pair aún no creado) — se crea solo al hacer \`wt switch --create $branch\` desde el back."; fi
-  # Bloque de tests: solo en el backoffice (los scripts run-*-tests.sh viven en el back).
-  local tests_block=""
+  # Fase 2 (QA-prep): detalle completo solo en el backoffice (los scripts y el PR viven en el
+  # back); en la app, un puntero al back (el flujo es back-driven, no se duplica).
+  local flujo_qa_block=""
   case "$role_label" in
-    *backoffice*) tests_block="
-## Tests (referencia rápida — corré desde este worktree del back)
-- unit (todos): \`bash scripts/run-unit-tests.sh\`
-- service (todos, levanta el stack Docker :44321): \`bash scripts/run-service-tests.sh\`
-- e2e (SOLO el módulo; CI lo skipea → local es la única red): \`bash scripts/run-e2e.sh -- tests/e2e/<carpeta>/\`
-- ⚠️ parar la BD de test al terminar (no dejar Docker consumiendo): \`bash scripts/test-supabase-stop.sh\`
-- Doc completa (scope, mapeo módulo→e2e, gotchas): \`_work/apprecio/projects/rr/testing/correr-tests-locales.md\`
+    *backoffice*) flujo_qa_block="
+**Fase 2 — Preparar para QA** (cuando el desarrollo está listo; desde este worktree del back)
+1. **Tests locales** (los 3; e2e SOLO el módulo):
+   - unit:    \`bash scripts/run-unit-tests.sh\`
+   - service: \`bash scripts/run-service-tests.sh\`  (levanta Docker :44321)
+   - e2e (SOLO el módulo): \`bash scripts/run-e2e.sh -- tests/e2e/<carpeta>/\`  (CI skipea e2e → local es la única red)
+   - parar el stack SIEMPRE con \`bash scripts/test-supabase-stop.sh\` (NUNCA \`docker stop\` → traba el CLI de Supabase)
+   - fallos ajenos/pre-existentes o flakes ambientales NO bloquean: confirmá con A/B (revertí tu cambio y re-corré) o corrida aislada (N≥10). Doc: \`_work/apprecio/projects/rr/testing/correr-tests-locales.md\`
+2. **Code review**: en una **sesión NUEVA** correr \`/pr-review #<PR>\`. El agente revisa y aplica fixes; **iterar** hasta READY TO MERGE (los CONSIDER no bloquean).
+3. **Ambiente QA**: agregar al PR los **3 labels juntos** — \`deploy:staging\` + \`deploy:preview\` + \`skip:e2e\`. Conviven: staging corre backend-tests y su Job 3 despliega el **preview** (subordinado); skip:e2e saltea e2e (ya corridos local). Agregarlos casi a la vez cancela runs intermedios (concurrency) → el último run es el válido.
+4. **Pipeline**: esperar backend-tests verdes → preview levantado → **gate ADLC OK**.
+5. **Probar en el preview** (URL del Job 3) y verificar el fix a ojo en el ambiente.
+6. **Borrador para Ignacio**: redactar el pedido (formato code-review) para que Ignacio revise y pase a QA. **Nunca mergear sin OK.**
+7. **Solicitudes formales en Linear** (los pedidos del paso 6, ya con plantilla). Las **URLs salen del comentario del PR** una vez que el preview quedó arriba y el pipeline en verde (Job 3). Regla de iteración:
+   - **Primer QA** (tras tu OK técnico — \`/pr-review\` en READY TO MERGE): se pide TODO junto → **Plantilla A**.
+   - **Iteraciones siguientes** (QA o code review devolvió hallazgos y los arreglaste): NO juntas. Primero **Plantilla B** (Code Review), esperá READY TO MERGE, y recién ahí **Plantilla C** (QA).
+   - **Cierre** (aprobaciones completas en ambos PRs): **Plantilla D**.
+
+---
+**Plantilla A — Code Review + QA juntas (solo primer QA, tras tu OK técnico)**
+
+### **Solicitudes formales**
+
+Con el estándar técnico ya validado de mi parte (revisión interna /pr-review en READY TO MERGE):
+
+@ignacio — Solicito formalmente revisión de Code Review de tus agentes en el PR:
+* PR#XXX (BACKOFFICE): [ivaldovinos-app/apprecio-pulse#XXX](link-linear)
+
+@juli — Solicito formalmente revisión de primer ciclo de QA en este PR#XXX.
+Comparto los ambientes para revisión de QA una vez que estés disponible
+(teniendo en cuenta que la prioridad actual es ...):
+
+* **Backoffice:** https://pr-XXX.apprecio-pulse-preview.pages.dev
+* **App Pulse:** https://pr-XXX.ryr-app-preview.pages.dev
+
+---
+**Plantilla B — Solo Code Review (iteraciones — va PRIMERO)**
+
+### **Solicitud de Code Review (iteración)**
+
+@ignacio — Apliqué los fixes de la vuelta anterior. Solicito formalmente nueva revisión de Code Review de tus agentes en el PR:
+* PR#XXX (BACKOFFICE): [ivaldovinos-app/apprecio-pulse#XXX](link-linear)
+
+---
+**Plantilla C — Solo QA (iteraciones — DESPUÉS del READY TO MERGE del code review)**
+
+### **Solicitud de QA (iteración)**
+
+@juli — Code review en READY TO MERGE. Solicito formalmente nuevo ciclo de QA.
+Comparto los ambientes (teniendo en cuenta que la prioridad actual es ...):
+
+* **Backoffice:** https://pr-XXX.apprecio-pulse-preview.pages.dev
+* **App Pulse:** https://pr-XXX.ryr-app-preview.pages.dev
+
+cc @ignacio (para visibilidad)
+
+---
+**Plantilla D — Listo para Merge (cierre)**
+
+@ignacio
+
+Ya con las aprobaciones completas:
+
+* Code review: READY TO MERGE en ambos PRs
+* QA: Aprobado
+* Ramas actualizadas: ambos trunks al día con main
+* Workflows CI: pasaron en verde
+
+PRs listos para merge:
+* Backoffice: PR #XXX [link]
+* App cliente: PR #YY [link]
+
+**Orden de deploy obligatorio:** PR #XXX (backend) mergeado ANTES de PR #YY (frontend). ...
+@ignacio esta condición es tuya como dueño del deploy.
+" ;;
+    *) flujo_qa_block="
+**Fase 2 — Preparar para QA**: es **back-driven** (tests, \`/pr-review\`, labels \`deploy:staging\`+\`deploy:preview\`+\`skip:e2e\`, preview, borrador a Ignacio) → se maneja desde el back (\`back-pulse-cesar.$SUFFIX\`), ver su \`CLAUDE.local.md\`. Esta es la app (pair): NO dupliques el flujo acá.
 " ;;
   esac
   cat > "$target/CLAUDE.local.md" <<EOF
 # Beat Workspace — worktree aislado (auto-generado por beat-isolate.sh — NO commitear)
+
+## ⚠️ Flujo de la rama — LO PRIMERO (no omitir, en orden)
+Este repo opera bajo ADLC v4.2 (ver \`CLAUDE.md\`).
+
+**Fase 1 — Desarrollo**
+1. \`/adlc-start\` ANTES de tocar código (arranque del flujo, no opcional).
+2. **No build/PR sin spec**: el spec en \`docs/specs/*.md\` debe existir Y estar referenciado en el body del PR ANTES de abrir el PR. Si abrís el PR sin spec, el \`gate-check\` de CI sale ROJO ("Missing spec file path") y queda PERMANENTE → tocaría abrir un PR nuevo.
+3. Orden: spec (Stage 1) → build + tests (Stage 2) → \`bash scripts/adlc/gate-check.sh\` local en verde → abrir el PR YA completo (spec + body) → CI gate verde desde el primer run.
+$flujo_qa_block
 
 ## Estás acá
 - Repo: $role_label
@@ -191,7 +271,6 @@ $pair_line
 ## Engram — política Beat
 - SIEMPRE \`project: "recognition-and-rewards"\` en mem_save / mem_search / mem_context.
 - Contenido PE personal (carrera, evaluaciones, 1:1): \`scope: "personal"\`, NO el project.
-$tests_block
 EOF
 }
 
