@@ -9,12 +9,15 @@ Resuelve "no entendí qué pasaba". El deliverable es la **comprensión**, no un
 
 **Input:** `<ISSUE-ID>` (ej. RYR-132).
 
+**Requiere** el binario `linear-pp-cli` (skill `pp-linear`). Si falta: `npx -y @mvanhorn/printing-press-library install linear --cli-only`.
+
 ## Flujo
 
-1. **Leé la realidad completa.**
-   - Issue: descripción (`get_issue`) **y** TODOS los comentarios en orden (`list_comments` por `createdAt`, paginado hasta el final). `read_linear_issue` trunca threads largos — no lo uses como única fuente del "último comentario".
+1. **Leé la realidad completa — vía `linear-pp-cli`, siempre en vivo.**
+   - **Cuerpo + estado del issue:** `linear-pp-cli issues <ID> --data-source live --agent --select identifier,title,description,state.name,url`. El `--data-source live` es **obligatorio**: sin él, el default lee del store local (puede estar días viejo).
+   - **Hilo completo:** `linear-pp-cli comments list <ID> --limit 100 --agent` — todos los comentarios en 1 llamada, siempre en vivo (no depende de `sync`). Cada uno trae `createdAt`, `user`, `parent` (si es reply) e `id` (= el `comment_id` para citar). Vienen nuevo→viejo; ordenalos por `createdAt` ascendente para leer el flujo. Si `results.pageInfo.hasNextPage` es `true` (hilo >100), subí `--limit` o paginá con `endCursor`.
    - PRs asociados: los que el issue o el hilo referencien (`gh pr view` para contexto, sin checkout).
-   - Threads largos (80+ comentarios): delegá la lectura a un sub-agente que devuelva `{comentario más reciente, decisiones cerradas, quién espera qué, citas verbatim + comment_id}`.
+   - Threads largos (80+ comentarios): el fetch ya es un solo comando; si el volumen de análisis es alto, delegá la **lectura** a un sub-agente que devuelva `{comentario más reciente, decisiones cerradas, quién espera qué, citas verbatim + comment_id}`.
 2. **📖 De qué se trata** — el problema en lenguaje súper simple, para alguien que NO conoce el issue (2-3 frases, cero jerga). Esto es lo principal: que cualquiera entienda en 5 segundos.
 3. **Situación** — leé el flujo: qué se decidió, qué avanzó, qué está pendiente, **quién espera qué** (de César o de otro). Si alguien ya cerró el punto o la conversación avanzó sin esperar a César → decílo (no todo lo que lo menciona necesita su acción).
 4. **Tipo** — clasificá de qué se trata (apoyate en el skill `lane` para saber si le toca a César o es de otro):
