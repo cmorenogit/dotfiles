@@ -17,15 +17,6 @@ Conocimiento **operativo** del sistema de skills. Vive acá (global, con los ski
 
 **Conocimiento de dominio** (Apprecio): `producto.md` · `lane.md` viven en el **vault** (`_work/apprecio/_shared/`, cerebro). Los criterios de review de **código** viven en `pr-review/knowledge/`.
 
-## Diseño de código (port de Matt Pocock)
-
-| Skill | Tipo | Hace | Consume |
-|---|---|---|---|
-| `improve-codebase-architecture` | user-invoked | rescata un codebase "ball of mud": detecta módulos shallow, reporte visual, re-diseño del elegido | `codebase-design`, `/lavish`, grilling inline |
-| `codebase-design` | model-invoked | vocabulario de deep modules (module/interface/depth/seam/adapter) + tests + design-it-twice | `DEEPENING.md`, `DESIGN-IT-TWICE.md` |
-
-**Gobernanza:** `improve-codebase-architecture` es user-invoked, así que **no puede invocar `/grill`** (otro user-invoked) — el loop de interrogatorio va inline en su fase 3. Sí invoca `/lavish` y `/codebase-design` (model-invoked). El reporte HTML de Matt se reemplazó por `/lavish` (interactivo + anotable).
-
 ## ¿Dónde va una regla nueva? — "¿de qué trata?"
 
 | La regla trata de… | Va a |
