@@ -1,0 +1,34 @@
+# herdr — config compartida (server en la Mac mini + clientes --remote desde laptop)
+# Keybinds portados de tmux (terminal/tmux/.tmux.conf). En la mini vive una copia
+# en ~/.config/herdr/config.toml (user ston); en la laptop, symlink a este archivo.
+# Todo lo no listado queda en su default nativo (v = split derecha, h/j/k/l = focus,
+# 1..9 = tabs, w = workspaces, g = goto, shift+r = reload config, z queda libre → m).
+
+[keys]
+prefix = "ctrl+a"
+
+# tabs = "ventanas" de tmux
+new_tab = "prefix+n"             # tmux: C-a n (default herdr era prefix+c)
+next_tab = "prefix+shift+l"      # tmux: C-a L
+previous_tab = "prefix+shift+h"  # tmux: C-a H
+
+# panes
+split_horizontal = "prefix+s"    # tmux: C-a s → split abajo
+close_pane = "prefix+c"          # tmux: C-a c (confirm_close nativo protege)
+zoom = "prefix+m"                # tmux: C-a m
+
+# settings deja prefix+s libre para el split
+settings = "prefix+shift+s"
+
+[ui]
+show_agent_labels_on_pane_borders = true
+
+[ui.toast]
+delivery = "herdr"
+
+[ui.sound]
+enabled = true
+
+[experimental]
+pane_history = false
+switch_ascii_input_source_in_prefix = false
