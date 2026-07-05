@@ -62,7 +62,7 @@ else
   ok "profile mini-cli: desktop UI checks skipped"
 fi
 
-if grep -q "/Users/cmoreno/.dotfiles" "$DOTFILES_PATH/shell/zsh/.zshenv"; then
+if grep -q "$HOME/.dotfiles" "$DOTFILES_PATH/shell/zsh/.zshenv"; then
   warn "hardcoded path found in shell/zsh/.zshenv"
 else
   ok "portable path in shell/zsh/.zshenv"

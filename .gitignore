@@ -18,3 +18,7 @@ tooling/opencode/secrets.local
 
 # Excepcion: configuracion por CLI (compartible entre maquinas, no es secret)
 !ai/_shared/*.local.md
+
+# Generados por zim por-maquina (zimfw los reconstruye)
+shell/zsh/.zim/init.zsh
+shell/zsh/.zim/login_init.zsh

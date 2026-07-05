@@ -88,35 +88,35 @@ keybindings:
           command: "tmux new-window -n 'PR-{{.PrNumber}}' 'cd {{.RepoPath}} && wt switch pr:{{.PrNumber}} -x bash -- -c \"claude; cd {{.RepoPath}} && wt remove -D $(gh pr view {{.PrNumber}} --json headRefName -q .headRefName)\"'"
 repoPaths:
     # R&R
-    ivaldovinos-app/apprecio-pulse: /Users/cmoreno/Code/work/back-pulse-cesar
-    ivaldovinos-app/apprecio-pulse-dev-cesar: /Users/cmoreno/Code/work/back-pulse-cesar
-    ivaldovinos-app/ryr-app-cesar: /Users/cmoreno/Code/work/app-rr-cesar
+    ivaldovinos-app/apprecio-pulse: ~/Code/work/back-pulse-cesar
+    ivaldovinos-app/apprecio-pulse-dev-cesar: ~/Code/work/back-pulse-cesar
+    ivaldovinos-app/ryr-app-cesar: ~/Code/work/app-rr-cesar
     # Personal
-    cmoreno/app-profile: /Users/cmoreno/Code/personal/app-profile
+    cmoreno/app-profile: ~/Code/personal/app-profile
     # Fuerza
-    dcanje/core-api-encuestas: /Users/cmoreno/Code/work/fuerza/app-encuestas
-    dcanje/core-api-entrenamientos: /Users/cmoreno/Code/work/fuerza/app-entrenamientos
-    dcanje/frz-api-external-login: /Users/cmoreno/Code/work/fuerza/app-external-login
-    dcanje/frz-api-fuerza: /Users/cmoreno/Code/work/fuerza/app-fuerza
-    dcanje/frz-api-insignias: /Users/cmoreno/Code/work/fuerza/app-insignias
-    dcanje/frz-api-metas: /Users/cmoreno/Code/work/fuerza/app-metas
-    dcanje/frz-api-notificaciones: /Users/cmoreno/Code/work/fuerza/app-notificaciones
-    dcanje/frz-api-registro-foto: /Users/cmoreno/Code/work/fuerza/app-registro-foto
-    dcanje/incentivos-laravel: /Users/cmoreno/Code/work/fuerza/incentivos
-    dcanje/frz-portal-web-fuerza: /Users/cmoreno/Code/work/fuerza/web-fuerza
-    dcanje/prd-old-portal-encuestas: /Users/cmoreno/Code/work/fuerza/web-old-portal-encuestas
-    dcanje/core-portal-entrenamientos: /Users/cmoreno/Code/work/fuerza/web-portal-entrenamientos
+    dcanje/core-api-encuestas: ~/Code/work/fuerza/app-encuestas
+    dcanje/core-api-entrenamientos: ~/Code/work/fuerza/app-entrenamientos
+    dcanje/frz-api-external-login: ~/Code/work/fuerza/app-external-login
+    dcanje/frz-api-fuerza: ~/Code/work/fuerza/app-fuerza
+    dcanje/frz-api-insignias: ~/Code/work/fuerza/app-insignias
+    dcanje/frz-api-metas: ~/Code/work/fuerza/app-metas
+    dcanje/frz-api-notificaciones: ~/Code/work/fuerza/app-notificaciones
+    dcanje/frz-api-registro-foto: ~/Code/work/fuerza/app-registro-foto
+    dcanje/incentivos-laravel: ~/Code/work/fuerza/incentivos
+    dcanje/frz-portal-web-fuerza: ~/Code/work/fuerza/web-fuerza
+    dcanje/prd-old-portal-encuestas: ~/Code/work/fuerza/web-old-portal-encuestas
+    dcanje/core-portal-entrenamientos: ~/Code/work/fuerza/web-portal-entrenamientos
     # Smart Loyalty
-    dcanje/exp-api-invita-amigos: /Users/cmoreno/Code/work/smart-loyalty/app-referidos-amigos
-    dcanje/exp-api-experience: /Users/cmoreno/Code/work/smart-loyalty/app-smart-loyalty
-    dcanje/exp-web-experience: /Users/cmoreno/Code/work/smart-loyalty/web-smart-loyalty
+    dcanje/exp-api-invita-amigos: ~/Code/work/smart-loyalty/app-referidos-amigos
+    dcanje/exp-api-experience: ~/Code/work/smart-loyalty/app-smart-loyalty
+    dcanje/exp-web-experience: ~/Code/work/smart-loyalty/web-smart-loyalty
     # Engagement
-    dcanje/exp-api-registro-boletas: /Users/cmoreno/Code/work/engagement/app-desafios-boletas
-    dcanje/exp-api-apprecio-play: /Users/cmoreno/Code/work/engagement/apprecio-play
-    dcanje/incentivos-auth-service: /Users/cmoreno/Code/work/engagement/auth-service
-    dcanje/incentivos-copilot-service: /Users/cmoreno/Code/work/engagement/copilot-service
-    dcanje/incentivos-log-service: /Users/cmoreno/Code/work/engagement/log-service
-    dcanje/incentivos-apprecio-com: /Users/cmoreno/Code/work/engagement/web-engagement
+    dcanje/exp-api-registro-boletas: ~/Code/work/engagement/app-desafios-boletas
+    dcanje/exp-api-apprecio-play: ~/Code/work/engagement/apprecio-play
+    dcanje/incentivos-auth-service: ~/Code/work/engagement/auth-service
+    dcanje/incentivos-copilot-service: ~/Code/work/engagement/copilot-service
+    dcanje/incentivos-log-service: ~/Code/work/engagement/log-service
+    dcanje/incentivos-apprecio-com: ~/Code/work/engagement/web-engagement
 theme:
     colors:
         text:

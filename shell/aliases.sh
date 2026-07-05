@@ -58,7 +58,7 @@ alias ta='tmux attach -t'
 alias tn='tmux new-session -s'
 
 # meeting-scribe (real-time transcription)
-alias scribe='/Users/cmoreno/Code/personal/meeting-scribe/.venv/bin/meeting-scribe'
+alias scribe="$HOME/Code/personal/meeting-scribe/.venv/bin/meeting-scribe"
 
 # SSH Mini
 alias mini="ssh mini"

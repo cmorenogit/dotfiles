@@ -9,19 +9,19 @@
   },
   "permissions": {
     "allow": [
-      "Read(//Users/cmoreno/Code/work/**)",
-      "Read(//Users/cmoreno/Code/personal/**)",
-      "Write(//Users/cmoreno/Code/personal/**)",
-      "Read(//Users/cmoreno/Code/_vault/**)",
-      "Write(//Users/cmoreno/Code/_vault/**)",
+      "Read(~/Code/work/**)",
+      "Read(~/Code/personal/**)",
+      "Write(~/Code/personal/**)",
+      "Read(~/Code/_vault/**)",
+      "Write(~/Code/_vault/**)",
       "mcp__obsidian__obsidian_append_content",
       "WebSearch",
       "Bash(tree:*)",
       "Bash(node -e:*)"
     ],
     "deny": [
-      "Read(//Users/cmoreno/Code/_archive/**)",
-      "Write(//Users/cmoreno/Code/_archive/**)"
+      "Read(~/Code/_archive/**)",
+      "Write(~/Code/_archive/**)"
     ],
     "ask": [],
     "defaultMode": "auto"
@@ -71,28 +71,6 @@
         ]
       }
     ],
-    "PreCompact": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bd prime"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bd prime"
-          }
-        ]
-      }
-    ],
     "Stop": [],
     "StopFailure": [
       {
@@ -109,11 +87,12 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "/opt/homebrew/bin/bash \"/Users/cmoreno/.claude/statusline-command.sh\""
+    "command": "/opt/homebrew/bin/bash \"$HOME/.claude/statusline-command.sh\""
   },
   "enabledPlugins": {
     "engram@engram": true,
-    "worktrunk@worktrunk": true
+    "worktrunk@worktrunk": true,
+    "last30days@last30days-skill": true
   },
   "extraKnownMarketplaces": {
     "worktrunk": {
@@ -126,6 +105,12 @@
       "source": {
         "source": "github",
         "repo": "Gentleman-Programming/engram"
+      }
+    },
+    "last30days-skill": {
+      "source": {
+        "source": "github",
+        "repo": "mvanhorn/last30days-skill"
       }
     }
   },
