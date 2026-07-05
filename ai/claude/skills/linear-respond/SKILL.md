@@ -20,7 +20,7 @@ Clasificá el tipo (insumo de lore): **review** → §1 · **consulta / duda** �
 Tu revisión técnica es el **PRIMER paso**, previo al code-review de Ignacio + QA.
 
 1. **Readiness primero** — corré `verificacion` con `reglas-readiness/beat.md`: issue In Progress · par de PRs app+BO mismo branch · labels `deploy:staging`+`deploy:preview` · ADLC Gate `PASSED` · mergeable. **Si falta algo → devolución de readiness** ("falta X para revisar"), NO entres al código.
-   - El **estado del issue** (In Progress) verificalo en vivo con `linear-pp-cli issues <ID> --data-source live --agent --select identifier,state.name,url` (`live` obligatorio); el resto del readiness (PRs, labels, gate, mergeable) es de GitHub.
+   - El **estado del issue** (In Progress) verificalo en vivo con `bash ~/.claude/skills/linear-respond/state.sh <ID>` (lee live la GraphQL API de Linear); el resto del readiness (PRs, labels, gate, mergeable) es de GitHub.
 2. **Estándar técnico** — si readiness OK, revisá el PR contra los criterios técnicos de `lane` (causa raíz, no remover defensa, CCC en RPC, invariante anti-regresión, flags wired, observe→enforce). **[Opcional]** `/pr-review <PR>` para el análisis profundo — opcional porque el code-review de Ignacio normalmente lo levanta.
 3. **Verificá los claims** con `verificacion` antes de afirmarlos (código de referencia / context7). Cero afirmaciones sin trazar a `ruta:línea`.
 4. **Veredicto** — `APPROVE / APPROVE WITH CONDITIONS / CHANGES REQUESTED` + `MUST / SHOULD / CONSIDER` con `ruta:línea`. Tras el visto bueno, vos solicitás el code-review a Ignacio.
@@ -29,7 +29,7 @@ Tu revisión técnica es el **PRIMER paso**, previo al code-review de Ignacio + 
 
 NO elijas entre las opciones que trae el dev — **cuestioná la premisa**.
 
-> **Dedup primero** — si el pedido podría ya existir como issue (bug, seguimiento), corré `linear-pp-cli issues search "<términos clave>" --agent` (FTS5 local, refresca solo si está stale). Si hay un issue similar, la respuesta correcta es **enlazarlo**, no tratar el pedido como nuevo.
+> **Dedup primero** — si el pedido podría ya existir como issue (bug, seguimiento), corré `bash ~/.claude/skills/linear-respond/search.sh "<términos clave>"` (búsqueda full-text live contra la API de Linear). Si hay un issue similar, la respuesta correcta es **enlazarlo**, no tratar el pedido como nuevo.
 
 1. **Cuestioná desde producto** — corré `producto`: ¿cuál es el outcome real? ¿la solución está sobredimensionada? ¿hace falta hacerlo ahora? (caso típico: te piden elegir entre A y B cuando el outcome no necesitaba ninguna). Si amerita profundizar el cuestionamiento → sugerí `/grill`.
 2. **Encuadrá** con `lane`: ¿la decisión es mía (técnica) o de producto (Ignacio / Nicole)?

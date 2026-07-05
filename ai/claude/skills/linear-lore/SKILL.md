@@ -9,13 +9,12 @@ Resuelve "no entendí qué pasaba". El deliverable es la **comprensión**, no un
 
 **Input:** `<ISSUE-ID>` (ej. RYR-132).
 
-**Requiere** el binario `linear-pp-cli` (skill `pp-linear`). Si falta: `npx -y @mvanhorn/printing-press-library install linear --cli-only`.
+**Requiere** solo tu `LINEAR_API_KEY` (env o keychain `linear-api-key`) — sin binarios externos. Lee en vivo contra la GraphQL API de Linear (mismo patrón que `/linear-peek` y `/linear-scan`).
 
 ## Flujo
 
-1. **Leé la realidad completa — vía `linear-pp-cli`, siempre en vivo.**
-   - **Cuerpo + estado del issue:** `linear-pp-cli issues <ID> --data-source live --agent --select identifier,title,description,state.name,url`. El `--data-source live` es **obligatorio**: sin él, el default lee del store local (puede estar días viejo).
-   - **Hilo completo:** `linear-pp-cli comments list <ID> --limit 100 --agent` — todos los comentarios en 1 llamada, siempre en vivo (no depende de `sync`). Cada uno trae `createdAt`, `user`, `parent` (si es reply) e `id` (= el `comment_id` para citar). Vienen nuevo→viejo; ordenalos por `createdAt` ascendente para leer el flujo. Si `results.pageInfo.hasNextPage` es `true` (hilo >100), subí `--limit` o paginá con `endCursor`.
+1. **Leé la realidad completa — en vivo, en una sola llamada.**
+   - `bash ~/.claude/skills/linear-lore/fetch.sh <ID>` trae, siempre live contra la GraphQL API de Linear: cuerpo + estado del issue **y** el hilo completo (hasta 100 comentarios) ya ordenado viejo→nuevo, cada uno con fecha (GMT-5), autor, marca de reply (↳) y su `comment_id` (para citar). Si avisa que el hilo tiene >100 comentarios, paginá.
    - PRs asociados: los que el issue o el hilo referencien (`gh pr view` para contexto, sin checkout).
    - Threads largos (80+ comentarios): el fetch ya es un solo comando; si el volumen de análisis es alto, delegá la **lectura** a un sub-agente que devuelva `{comentario más reciente, decisiones cerradas, quién espera qué, citas verbatim + comment_id}`.
 2. **📖 De qué se trata** — el problema en lenguaje súper simple, para alguien que NO conoce el issue (2-3 frases, cero jerga). Esto es lo principal: que cualquiera entienda en 5 segundos.
