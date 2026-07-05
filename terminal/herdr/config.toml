@@ -36,5 +36,5 @@ pane_history = true
 switch_ascii_input_source_in_prefix = false
 
 [theme]
-name = "catppuccin"
+name = "catppuccin-latte"
 auto_switch = false
