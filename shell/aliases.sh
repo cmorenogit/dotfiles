@@ -62,3 +62,7 @@ alias scribe="$HOME/Code/personal/meeting-scribe/.venv/bin/meeting-scribe"
 
 # SSH Mini
 alias mini="ssh mini"
+alias hmini="herdr --remote mini --remote-keybindings server"
+
+# Keychain: desbloquear el login keychain (útil en sesiones SSH, pide password)
+alias unlock="security unlock-keychain ~/Library/Keychains/login.keychain-db"
