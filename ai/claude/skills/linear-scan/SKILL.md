@@ -22,9 +22,9 @@ Reenviá los args que haya dado el usuario.
 
 ## Qué es — y qué no
 
-*scan* = **detectar + mostrar**, nada más. Colapsa por issue: 🔔 menciones/asignaciones y 📋 novedad en tus issues (el ruido —reacciones, borrados— queda fuera).
+*scan* = **detectar + mostrar**, nada más. Colapsa por issue: 🔔 menciones/asignaciones y 📋 novedad en tus issues (el ruido —reacciones, borrados— queda fuera). Muestra *qué se movió*, **no el contenido** — el último comentario no siempre es el último movimiento, así que meterlo acá daría falsa sensación de estar al día.
 
-No hace triage ni redacta respuesta. Si una mención merece entenderse → `/linear-lore <ID>`; responder → `/linear-respond <ID>`.
+No hace triage ni redacta respuesta. Para leer rápido los últimos comentarios de un issue → `/linear-peek <ID>`; entenderlo a fondo → `/linear-lore <ID>`; responder → `/linear-respond <ID>`.
 
 ## Loop
 

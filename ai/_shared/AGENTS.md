@@ -72,6 +72,16 @@ Ante cualquier decisión técnica, evaluar en este orden:
 ## Git
 Conventional Commits en inglés: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`.
 
+## Bitácora de issue (memoria viva que sobrevive a sesiones y /compact)
+Issues que **cruzan sesiones o tienen decisiones reales** (no un fix de 1 línea) llevan una bitácora viva: doc `00-bitacora.md` en el vault — 3 niveles (Producto · Seguimiento · Decisiones con pivoteo) — vía skill `/bitacora`. Es **comportamiento, no comandos**: un verbo, dos direcciones, implícito (decir "bitácora" ya implica producto + seguimiento + decisiones/pivoteo).
+- **Al arrancar/retomar** un issue con bitácora → leela primero (ponete al día). No codear sin el contexto.
+- **Al cerrar decisiones o avanzar** → registrá lo trabajado (proponé qué anexar; nunca pises el pivoteo viejo).
+- **Al planear/decidir dentro de ese issue** → verificá alineación contra lo ya decidido y avisá del desvío.
+
+**Guarda (clave):** el comportamiento ambiental SOLO aplica si (a) el trabajo está atado a un issue Y (b) ese issue tiene bitácora. En trabajo global/sin issue → no aplica; ante la duda, no asumas bitácora (a lo sumo sugerí crearla, nunca la impongas).
+
+La bitácora es el ancla de producto que `/compact` no puede borrar; complementa Engram (recall difuso) con un doc navegable por-issue.
+
 ---
 
 # Repos y mapping al vault
