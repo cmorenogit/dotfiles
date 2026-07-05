@@ -26,3 +26,5 @@
     ~/.config/gh-dash/config.yml: terminal/gh-dash/config.yml
     ~/.config/worktrunk/config.toml: terminal/worktrunk/config.toml
     ~/.config/worktrunk/scripts: terminal/worktrunk/scripts
+    # herdr: SOLO config.toml — el dir ~/.config/herdr guarda estado vivo (sockets, logs, session)
+    ~/.config/herdr/config.toml: terminal/herdr/config.toml

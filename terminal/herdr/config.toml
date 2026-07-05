@@ -1,8 +1,10 @@
 # herdr — config compartida (server en la Mac mini + clientes --remote desde laptop)
-# Keybinds portados de tmux (terminal/tmux/.tmux.conf). En la mini vive una copia
-# en ~/.config/herdr/config.toml (user ston); en la laptop, symlink a este archivo.
+# Ambas máquinas symlinkean ~/.config/herdr/config.toml a este archivo (manifest dotbot).
+# Keybinds portados de tmux (terminal/tmux/.tmux.conf).
 # Todo lo no listado queda en su default nativo (v = split derecha, h/j/k/l = focus,
 # 1..9 = tabs, w = workspaces, g = goto, shift+r = reload config, z queda libre → m).
+
+onboarding = false
 
 [keys]
 prefix = "ctrl+a"
@@ -30,5 +32,9 @@ delivery = "herdr"
 enabled = true
 
 [experimental]
-pane_history = false
+pane_history = true
 switch_ascii_input_source_in_prefix = false
+
+[theme]
+name = "catppuccin"
+auto_switch = false
