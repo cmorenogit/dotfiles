@@ -44,3 +44,8 @@ bindkey '^G' atuin-search
 
 # opencode
 export PATH="$HOME/.opencode/bin:$PATH"
+
+# Sesiones SSH interactivas aterrizan en ~/Code (no afecta scp/rsync ni comandos no interactivos)
+if [[ -n "$SSH_CONNECTION" && -o interactive && "$PWD" == "$HOME" && -d "$HOME/Code" ]]; then
+  cd "$HOME/Code"
+fi
