@@ -116,6 +116,7 @@
   },
   "language": "Español",
   "alwaysThinkingEnabled": true,
+  "disableArtifact": true,
   "effortLevel": "xhigh",
   "autoUpdatesChannel": "latest",
   "skipDangerousModePermissionPrompt": true,
