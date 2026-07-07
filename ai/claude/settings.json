@@ -49,41 +49,7 @@
         ]
       }
     ],
-    "Notification": [
-      {
-        "matcher": "idle_prompt",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/notify-claude.sh",
-            "async": true
-          }
-        ]
-      },
-      {
-        "matcher": "permission_prompt",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/notify-claude.sh",
-            "async": true
-          }
-        ]
-      }
-    ],
-    "Stop": [],
-    "StopFailure": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/notify-claude.sh",
-            "async": true
-          }
-        ]
-      }
-    ]
+    "Stop": []
   },
   "statusLine": {
     "type": "command",
