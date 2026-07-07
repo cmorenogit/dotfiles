@@ -22,6 +22,9 @@
     ~/.config/agents: ai/_shared
     ~/.pi/agent/AGENTS.md: ai/_shared/AGENTS.md
     ~/.config/opencode/AGENTS.md: ai/_shared/AGENTS.md
+    # AI CLIs — Pi config
+    ~/.pi/agent/settings.json: ai/pi/settings.json
+    ~/.pi/agent/skills: ai/pi/skills
     # AI CLIs — Claude Code config
     ~/.claude/CLAUDE.md: ai/claude/CLAUDE.md
     ~/.claude/settings.json: ai/claude/settings.json

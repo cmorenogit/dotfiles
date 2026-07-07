@@ -1,0 +1,45 @@
+{
+  "lastChangelogVersion": "0.80.3",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.5",
+  "defaultThinkingLevel": "high",
+  "theme": "dark",
+  "packages": [
+    {
+      "source": "npm:pi-powerline-footer",
+      "extensions": [
+        "+index.ts"
+      ]
+    },
+    {
+      "source": "npm:@hypabolic/pi-hypa",
+      "extensions": [
+        "+extensions/index.ts"
+      ]
+    },
+    {
+      "source": "npm:pi-web-access",
+      "skills": []
+    },
+    "npm:@tintinweb/pi-subagents",
+    "npm:gentle-engram",
+    {
+      "source": "npm:@ayulab/oh-my-pi",
+      "themes": [
+        "-themes/purple-dream.json"
+      ]
+    }
+  ],
+  "enableSkillCommands": true,
+  "showHardwareCursor": true,
+  "enableInstallTelemetry": false,
+  "defaultProjectTrust": "ask",
+  "warnings": {
+    "anthropicExtraUsage": true
+  },
+  "hideThinkingBlock": true,
+  "skills": [
+    "~/.dotfiles/ai/claude/skills/explica",
+    "~/.dotfiles/ai/claude/skills/producto"
+  ]
+}
