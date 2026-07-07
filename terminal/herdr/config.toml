@@ -1,40 +1,138 @@
 # herdr — config compartida (server en la Mac mini + clientes --remote desde laptop)
 # Ambas máquinas symlinkean ~/.config/herdr/config.toml a este archivo (manifest dotbot).
 # Keybinds portados de tmux (terminal/tmux/.tmux.conf).
-# Todo lo no listado queda en su default nativo (v = split derecha, h/j/k/l = focus,
-# 1..9 = tabs, w = workspaces, g = goto, shift+r = reload config, z queda libre → m).
+# Todo lo no listado queda en su default nativo.
 
 onboarding = false
+
+[update]
+channel = "stable"
+version_check = true
+manifest_check = true
+
+[terminal]
+default_shell = "zsh"
+shell_mode = "auto"
+new_cwd = "follow"
+
+[worktrees]
+directory = "~/.herdr/worktrees"
+
+[remote]
+manage_ssh_config = true
 
 [keys]
 prefix = "ctrl+a"
 
-# tabs = "ventanas" de tmux
-new_tab = "prefix+n"             # tmux: C-a n (default herdr era prefix+c)
+# Core
+help = "prefix+?"
+detach = "prefix+q"
+settings = "prefix+shift+s"
+reload_config = "prefix+shift+r"
+open_notification_target = "prefix+o"
+toggle_sidebar = "prefix+b"
+
+# Workspaces / worktrees
+workspace_picker = "prefix+w"
+goto = "prefix+g"
+new_workspace = "prefix+shift+n"
+rename_workspace = "prefix+shift+w"
+close_workspace = "prefix+shift+d"
+previous_workspace = "prefix+shift+left"
+next_workspace = "prefix+shift+right"
+switch_workspace = "prefix+shift+1..9"
+new_worktree = "prefix+shift+g"
+open_worktree = "prefix+shift+o"
+remove_worktree = "prefix+alt+d"
+
+# Agents
+focus_agent = "prefix+alt+1..9"
+previous_agent = "prefix+alt+up"
+next_agent = "prefix+alt+down"
+remote_image_paste = "ctrl+v"
+
+# Tabs = "ventanas" de tmux
+new_tab = "prefix+n"             # tmux: C-a n
 next_tab = "prefix+shift+l"      # tmux: C-a L
 previous_tab = "prefix+shift+h"  # tmux: C-a H
+switch_tab = "prefix+1..9"
+rename_tab = "prefix+shift+t"
+close_tab = "prefix+shift+x"
 
-# panes
+# Panes
+split_vertical = "prefix+v"      # split derecha
 split_horizontal = "prefix+s"    # tmux: C-a s → split abajo
-close_pane = "prefix+c"          # tmux: C-a c (confirm_close nativo protege)
+close_pane = "prefix+c"          # tmux: C-a c (confirm_close protege)
 zoom = "prefix+m"                # tmux: C-a m
+resize_mode = "prefix+r"
+edit_scrollback = "prefix+e"
+rename_pane = "prefix+shift+p"
+focus_pane_left = "prefix+h"
+focus_pane_down = ["prefix+j", "prefix+down"]
+focus_pane_up = ["prefix+k", "prefix+up"]
+focus_pane_right = "prefix+l"
+swap_pane_left = "prefix+alt+h"
+swap_pane_down = "prefix+alt+j"
+swap_pane_up = "prefix+alt+k"
+swap_pane_right = "prefix+alt+l"
+cycle_pane_next = "prefix+tab"
+cycle_pane_previous = "prefix+shift+tab"
 
-# settings deja prefix+s libre para el split
-settings = "prefix+shift+s"
+[[keys.command]]
+key = "prefix+alt+g"
+type = "pane"
+command = "lazygit"
+description = "run lazygit"
+
+[theme]
+name = "catppuccin"
+auto_switch = true
+light_name = "catppuccin-latte"
+dark_name = "catppuccin"
 
 [ui]
+sidebar_width = 32
+sidebar_min_width = 18
+sidebar_max_width = 42
+mobile_width_threshold = 80
+mouse_capture = true
+right_click_passthrough_modifier = "ctrl"
+redraw_on_focus_gained = false
+mouse_scroll_lines = 5
+confirm_close = true
+prompt_new_tab_name = true
+pane_borders = true
+pane_gaps = true
 show_agent_labels_on_pane_borders = true
+agent_panel_sort = "priority"
+accent = "cyan"
 
 [ui.toast]
 delivery = "herdr"
+delay_seconds = 1
+
+[ui.toast.herdr]
+position = "bottom-right"
+
+[ui.toast.clipboard]
+enabled = true
+position = "bottom-center"
 
 [ui.sound]
 enabled = true
 
-[experimental]
-pane_history = true
-switch_ascii_input_source_in_prefix = false
+[ui.sound.agents]
+droid = "off"
 
-[theme]
-name = "catppuccin"
-auto_switch = false
+[advanced]
+scrollback_limit_bytes = 5242880
+
+[session]
+resume_agents_on_restore = true
+
+[experimental]
+pane_history = false
+switch_ascii_input_source_in_prefix = false
+reveal_hidden_cursor_for_cjk_ime = false
+cjk_ime_agents = ["pi", "claude", "codex", "opencode"]
+cjk_ime_cursor_shape = "steady_block"
