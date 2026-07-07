@@ -15,6 +15,9 @@ export STATUSLINE_LAYOUT="full"
 # Claude Code rendering: enable flicker-free terminal UI
 export CLAUDE_CODE_NO_FLICKER=1
 
+# Claude Code: disable the Artifact tool globally (no web artifacts)
+export CLAUDE_CODE_DISABLE_ARTIFACT=1
+
 # ------------------------------------------------------------------------------
 # Languages
 # ------------------------------------------------------------------------------
