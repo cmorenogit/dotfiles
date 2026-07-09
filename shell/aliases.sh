@@ -64,5 +64,57 @@ alias scribe="$HOME/Code/personal/meeting-scribe/.venv/bin/meeting-scribe"
 alias mini="ssh mini"
 alias hmini="herdr --remote mini --remote-keybindings server"
 
+# herdr: gestión de sesiones nombradas en el server de mini.
+# `herdr session <cmd>` solo opera sobre el server local a la máquina donde
+# corre el comando, por eso hay que detectar si ya estamos en mini (correr
+# directo) o en otra máquina (saltar por ssh).
+_herdr_on_mini() {
+  [[ "$(hostname -s)" == "Mac-mini-de-Cesar" ]]
+}
+
+hnew() {
+  if [[ -z "$1" ]]; then
+    echo "uso: hnew <nombre-sesion>"
+    return 1
+  fi
+  if _herdr_on_mini; then
+    herdr --session "$1"
+  else
+    herdr --remote mini --session "$1"
+  fi
+}
+
+hls() {
+  if _herdr_on_mini; then
+    herdr session list
+  else
+    ssh mini herdr session list
+  fi
+}
+
+hstop() {
+  if [[ -z "$1" ]]; then
+    echo "uso: hstop <nombre-sesion>"
+    return 1
+  fi
+  if _herdr_on_mini; then
+    herdr session stop "$1"
+  else
+    ssh mini herdr session stop "$1"
+  fi
+}
+
+hrm() {
+  if [[ -z "$1" ]]; then
+    echo "uso: hrm <nombre-sesion>"
+    return 1
+  fi
+  if _herdr_on_mini; then
+    herdr session delete "$1"
+  else
+    ssh mini herdr session delete "$1"
+  fi
+}
+
 # Keychain: desbloquear el login keychain (útil en sesiones SSH, pide password)
 alias unlock="security unlock-keychain ~/Library/Keychains/login.keychain-db"
