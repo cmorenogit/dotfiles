@@ -6,9 +6,8 @@ Imprime JSON a stdout. La parte interpretativa (destilar, criticar, vincular)
 la hace el modelo en SKILL.md; este script solo hace lo mecánico y reproducible.
 
 Fuentes:
-  youtube / tiktok / instagram -> yt-dlp subtítulos (es/en) -> fallback audio + mlx_whisper
-                                  (instagram suele requerir login: best-effort)
-  twitter / web                -> {needs_webfetch: true}  (el modelo usa WebFetch)
+  youtube / tiktok  -> yt-dlp subtítulos (es/en) -> fallback audio + mlx_whisper
+  twitter / web     -> {needs_webfetch: true}  (el modelo usa WebFetch)
 
 Salida JSON (video con transcripción):
   {source, url, title, author, date, duration_min, method, transcript_path, chars}
@@ -19,7 +18,6 @@ import sys, os, json, re, subprocess, tempfile, glob
 
 YT = ("youtube.com", "youtu.be")
 TT = ("tiktok.com",)
-IG = ("instagram.com",)
 TW = ("twitter.com", "x.com")
 WHISPER_MODEL = "mlx-community/whisper-large-v3-turbo"
 SUB_LANGS = "es,es-ES,es-419,es-orig,en,en-US,en-orig"
@@ -31,8 +29,6 @@ def detect_source(url):
         return "youtube"
     if any(d in u for d in TT):
         return "tiktok"
-    if any(d in u for d in IG):
-        return "instagram"
     if any(d in u for d in TW):
         return "twitter"
     return "web"

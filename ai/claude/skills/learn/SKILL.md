@@ -1,6 +1,6 @@
 ---
 name: learn
-description: Convierte links (YouTube · Twitter · Instagram · TikTok · web) o contenido pegado en notas de estudio destiladas en _personal/learning/. Acepta varias URLs y modo cola (/learn inbox). Solo a mano (/learn <url…|texto|inbox>).
+description: Convierte un link (YouTube · Twitter · web) o contenido pegado en una nota de estudio destilada en _personal/learning/. Solo a mano (/learn <url|texto>).
 disable-model-invocation: true
 ---
 
@@ -8,11 +8,7 @@ disable-model-invocation: true
 
 Convertí un link **o un texto pegado** en un **documento para estudiar después**: una nota destilada, auto-suficiente y humanizada. No es una descarga ni una transcripción cruda — es conocimiento listo para revisar, con el link a la fuente original (si hay) para volver cuando lo necesites. La transcripción **no se guarda**: la nota es el único artefacto.
 
-Tres formas de invocarlo:
-
-- `learn <url>` o `learn <texto pegado>` — una fuente.
-- `learn <url1> <url2> …` — varias URLs: corré el pipeline completo (pasos 1–4) por cada una, en secuencia; el commit (paso 5) es **uno solo al final** para todo el lote.
-- `learn inbox` — **drena la cola de captura móvil** (ver "Modo inbox").
+`learn <url>` o `learn <texto pegado>` — una sola fuente por corrida.
 
 ## Pipeline
 
@@ -56,7 +52,7 @@ Generá `related:` buscando notas afines en `learning/` — wikilinks a archivos
 ### 5. Routeá y guardá
 
 - Nota → `learning/<source>/<YYYY-MM-DD>-<slug>.md`. **La fecha es la de descarga (hoy), no la de publicación de la fuente.** slug = kebab del título sin tildes.
-  - Con URL: `<source>` = `youtube` · `twitter` · `web` · `tiktok` · `instagram`.
+  - Con URL: `<source>` = `youtube` · `twitter` · `web` · `tiktok`.
   - **Contenido pegado:** `<source>` = `paste` y `type: paste` (cajón único — marca que no tiene fuente verificable).
 - Frontmatter estándar (schema en `REFERENCE.md`), `status: pending`.
 - Commit + push (las notas viven en el vault, otro repo):
@@ -69,20 +65,6 @@ cd ~/Code/_vault && git add _personal/learning && \
 
 *Done:* `git status` del vault limpio y pusheado.
 
-## Modo inbox — drenar la cola de captura móvil
-
-La cola vive en `~/Code/_vault/_personal/learning/inbox.md` (la llena Hermes desde Telegram vía `inbox-add.sh`; formato: `- [ ] <url> — <fecha> — <nota opcional>`).
-
-1. `cd ~/Code/_vault && git pull --rebase --autostash` — traé lo capturado.
-2. Leé las líneas `- [ ]` de la sección Pendientes. Si no hay, reportá "cola vacía" y terminá.
-3. Por cada línea, en secuencia: corré el pipeline (pasos 1–4) sobre su URL. Si la línea trae nota, usala como contexto en la Lectura crítica (es el "para qué lo guardé").
-   - **Éxito** → escribí la nota y **eliminá la línea** del inbox (la historia queda en git).
-   - **Falla** (sin transcripción, link muerto, login wall) → dejala como `- [!] <url> — <fecha> — error: <motivo breve>` y seguí con la siguiente. No reintentes en la misma corrida.
-4. Un solo commit al final para notas + inbox: `docs(learning): inbox — <N> notas (<sources>)`, luego `git pull --rebase --autostash && git push`.
-5. Reportá: procesadas / fallidas (con motivo) / pendientes restantes.
-
-*Done:* inbox sin `- [ ]` procesables, vault limpio y pusheado.
-
 ## Alcance
 
-v1: **YouTube · Twitter · Web · contenido pegado (paste)**. TikTok, Instagram y el video-dentro-de-tweet usan el camino whisper del extractor — habilitados, no garantizados (Instagram suele exigir login; si falla, queda `- [!]` para revisión manual). El puente a `/study` es **v2**: hoy la nota cierra en `status: pending`, tu cola de triaje.
+v1: **YouTube · Twitter · Web · contenido pegado (paste)**. TikTok y el video-dentro-de-tweet usan el camino whisper del extractor — habilitados, no garantizados. El puente a `/study` es **v2**: hoy la nota cierra en `status: pending`, tu cola de triaje.
