@@ -23,7 +23,7 @@ import re
 import sys
 
 VAULT_MARKER = "/Code/_vault/"
-ROOT_ALLOWED = {"CLAUDE.md", "README.md", ".gitignore", "MEMORY.md", ".hermes.md"}
+ROOT_ALLOWED = {"CLAUDE.md", "README.md", ".gitignore", "MEMORY.md"}
 ISSUES_DIR_RE = re.compile(r"^_work/apprecio/(projects/[^/]+|_shared)/issues/")
 ISSUE_EXEMPT_PREFIXES = ("_work/apprecio/linear/", "_work/apprecio/weekly/")
 RETIRED = (
