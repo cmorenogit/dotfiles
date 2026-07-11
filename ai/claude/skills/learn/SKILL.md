@@ -23,6 +23,7 @@ Mirá el argumento:
   python3 ~/.claude/skills/learn/fetch.py "<url>"
   ```
   Devuelve JSON con metadata y dos caminos: **`transcript_path`** (leé ese archivo — es el texto fuente efímero en `/tmp`) o **`needs_webfetch: true`** (solo `web` → traé el contenido con WebFetch sobre la `url`).
+  - **`duplicate: true`** = ya existe una nota de este contenido (`existing_note` trae la ruta). No reproceses: reportá la nota existente y terminá.
   - **`description`** es el texto del autor (links a repos, docs, herramientas — materia prima de la sección Recursos); **`chapters`** son los timestamps del video, para referenciar minutos en la nota.
   - **Video (youtube/tiktok/instagram/X-con-video)**: se descarga y transcribe con whisper local, siempre — un video de 30 min toma ~3-5 min; esperá sin cortar (no pases timeouts chicos al Bash). `method: subtitles-fallback` significa que whisper falló y la fuente son auto-subs (menor calidad — mencionalo en Lectura crítica si hay claims dudosos).
   - **X/Twitter**: el JSON ya trae el texto del tweet (con links expandidos y tweet citado); si es un **X Article**, el cuerpo completo renderizado viene incluido en el transcript (usa la sesión de X de Zen). Si reporta error o el artículo no renderizó, pedile a César el texto pegado — no inventes contenido.
@@ -62,8 +63,9 @@ Generá `related:` buscando notas afines en `learning/` — wikilinks a archivos
 - Commit + push (las notas viven en el vault, otro repo):
 
 ```sh
-cd ~/Code/_vault && git add _personal/learning && \
-  git commit -m "docs(learning): <source> — <título corto>" && \
+cd ~/Code/_vault && git add "_personal/learning/<source>/<archivo>.md" && \
+  git commit -m "docs(learning): <source> — <título corto>" \
+    -- "_personal/learning/<source>/<archivo>.md" && \
   git pull --rebase --autostash && git push
 ```
 

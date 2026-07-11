@@ -52,6 +52,36 @@ UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
 ZEN_PROFILES = os.path.expanduser("~/Library/Application Support/zen/Profiles")
 
 
+LEARNING_DIR = os.path.expanduser("~/Code/_vault/_personal/learning")
+
+
+def dedup_key(url, source):
+    """Clave estable por fuente — los params de tracking (?si=, ?s=) varían
+    entre shares del mismo contenido, así que se deduplica por el ID."""
+    pats = {
+        "youtube": r"(?:v=|youtu\.be/|/live/|/shorts/)([\w-]{8,})",
+        "twitter": r"/status/(\d+)",
+        "instagram": r"/(?:reel|p)/([\w-]{5,})",
+        "tiktok": r"/video/(\d+)",
+    }
+    pat = pats.get(source)
+    if pat:
+        m = re.search(pat, url)
+        if m:
+            return m.group(1)
+    return url.split("?")[0]
+
+
+def find_existing_note(url, source):
+    """Ruta de la nota existente que ya referencia este contenido, o None."""
+    key = dedup_key(url, source)
+    if not key or len(key) < 5 or not os.path.isdir(LEARNING_DIR):
+        return None
+    p = run(["grep", "-rl", "--include=*.md", "-F", key, LEARNING_DIR])
+    hits = [h for h in (p.stdout or "").strip().splitlines() if h]
+    return hits[0] if hits else None
+
+
 def detect_source(url):
     u = url.lower()
     if any(d in u for d in YT):
@@ -334,6 +364,14 @@ def main():
         emit({"error": "uso: fetch.py <url>"}, 1)
     url = sys.argv[1].strip()
     source = detect_source(url)
+
+    existing = find_existing_note(url, source)
+    if existing:
+        emit({"source": source, "url": url, "duplicate": True,
+              "existing_note": existing,
+              "note": "ya existe una nota de este contenido — no reproceses; "
+                      "reportá la ruta existente"})
+
     tmp = tempfile.mkdtemp(prefix="learn-")
     base = os.path.join(tmp, "src")
 
@@ -387,6 +425,15 @@ def main():
 
     tpath = os.path.join(tmp, "transcript.txt")
     open(tpath, "w", encoding="utf-8").write(transcript)
+
+    # cleanup: el mp3 (~100-200MB en videos largos) y los srt ya cumplieron;
+    # solo el transcript queda para el agente
+    for leftover in glob.glob(base + "*") + glob.glob(os.path.join(tmp, "whisper*.txt")):
+        try:
+            os.remove(leftover)
+        except OSError:
+            pass
+
     emit({**meta, "source": source, "url": url, "method": method,
           "transcript_path": tpath, "chars": len(transcript)})
 
