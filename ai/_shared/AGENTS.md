@@ -11,7 +11,7 @@
 **Mi equipo (Producto):**
 - Ignacio Valdovinos — Jefe de Producto (despliega a producción)
 - Julieth — QA principal (intermediaria con Soporte; valida en QA + países)
-- Samuel, Faber, Kevin, Jhoan — Devs
+- Samuel, Faber, Kevin — Devs
 - Nicole — Producto (Beat y app)
 
 **Otros equipos clave:**

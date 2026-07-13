@@ -57,7 +57,6 @@ Support escalation channel. 10 human members.
 | Samuel (Alvarado?) | Soporte/Dev | 108399210587889233103 | hckCmSAAAAE |
 | Ruben (Venegas) | Core legacy Fuerza | 116324056077885622751 | oaJX9cAAAAE |
 | Stephanie (D'Angelo) | — | 114828342955466251726 | 0-K39cAAAAE |
-| Jhoan Burbano | Dev (R&R / Beat) | 114393679423221776709 | siFXRyAAAAE |
 
 ### Other Known DMs
 
@@ -65,6 +64,7 @@ Support escalation channel. 10 human members.
 |----------|---------|-------|
 | hS3n6iAAAAE | Wilder Vera (wvera@apprecio.com) | DM 1:1 — verificado 2026-06-12 (antes mal anotado como "Nicole secondary/group") |
 | tzxNPiAAAAE | Unknown | Last msg: "Buenos dias Cesar" |
+| siFXRyAAAAE | Jhoan Burbano | EX-EMPLEADO — desvinculado de Apprecio (retirado del roster 2026-07-13). No contactar como miembro del equipo |
 
 > ⚠️ Antes de ENVIAR a un DM, verificar identidad leyendo 2-3 mensajes del hilo — esta tabla puede quedar desactualizada.
 
