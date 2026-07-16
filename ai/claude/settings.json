@@ -11,9 +11,9 @@
     "allow": [
       "Read(~/Code/work/**)",
       "Read(~/Code/personal/**)",
-      "Write(~/Code/personal/**)",
+      "Edit(~/Code/personal/**)",
       "Read(~/Code/_vault/**)",
-      "Write(~/Code/_vault/**)",
+      "Edit(~/Code/_vault/**)",
       "mcp__obsidian__obsidian_append_content",
       "WebSearch",
       "Bash(tree:*)",
@@ -21,7 +21,7 @@
     ],
     "deny": [
       "Read(~/Code/_archive/**)",
-      "Write(~/Code/_archive/**)"
+      "Edit(~/Code/_archive/**)"
     ],
     "ask": [],
     "defaultMode": "auto"
@@ -51,6 +51,7 @@
     ],
     "Stop": []
   },
+  "disableArtifact": true,
   "statusLine": {
     "type": "command",
     "command": "/opt/homebrew/bin/bash \"$HOME/.claude/statusline-command.sh\""
@@ -82,13 +83,17 @@
   },
   "language": "Español",
   "alwaysThinkingEnabled": true,
-  "disableArtifact": true,
   "effortLevel": "xhigh",
   "autoUpdatesChannel": "latest",
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
+  },
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark-ansi",
   "preferredNotifChannel": "ghostty",
   "teammateMode": "tmux",
   "skipAutoPermissionPrompt": true,
-  "voiceEnabled": true
+  "voiceEnabled": true,
+  "model": "claude-fable-5[1m]"
 }
