@@ -56,7 +56,7 @@ new_tab = "prefix+n"             # tmux: C-a n
 next_tab = "prefix+shift+l"      # tmux: C-a L
 previous_tab = "prefix+shift+h"  # tmux: C-a H
 switch_tab = "prefix+1..9"
-rename_tab = "prefix+shift+t"
+rename_tab = "prefix+enter"
 close_tab = "prefix+shift+x"
 
 # Panes
@@ -86,7 +86,7 @@ description = "run lazygit"
 
 [theme]
 name = "catppuccin"
-auto_switch = true
+auto_switch = false
 light_name = "catppuccin-latte"
 dark_name = "catppuccin"
 
