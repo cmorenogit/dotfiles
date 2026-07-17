@@ -21,7 +21,8 @@
     ],
     "deny": [
       "Read(~/Code/_archive/**)",
-      "Edit(~/Code/_archive/**)"
+      "Edit(~/Code/_archive/**)",
+      "NotebookEdit"
     ],
     "ask": [],
     "defaultMode": "auto"
@@ -52,6 +53,8 @@
     "Stop": []
   },
   "disableArtifact": true,
+  "disableRemoteControl": true,
+  "disableClaudeAiConnectors": true,
   "statusLine": {
     "type": "command",
     "command": "/opt/homebrew/bin/bash \"$HOME/.claude/statusline-command.sh\""
