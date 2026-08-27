@@ -163,7 +163,7 @@ write_claude_local() {
 3. **Ambiente QA**: agregar al PR los **3 labels juntos** — \`deploy:staging\` + \`deploy:preview\` + \`skip:e2e\`. Conviven: staging corre backend-tests y su Job 3 despliega el **preview** (subordinado); skip:e2e saltea e2e (ya corridos local). Agregarlos casi a la vez cancela runs intermedios (concurrency) → el último run es el válido.
 4. **Pipeline**: esperar backend-tests verdes → preview levantado → **gate ADLC OK**.
 5. **Probar en el preview** (URL del Job 3) y verificar el fix a ojo en el ambiente.
-6. **Borrador para Ignacio**: redactar el pedido (formato code-review) para que Ignacio revise y pase a QA. **Nunca mergear sin OK.**
+6. **Borrador para Hakeem**: redactar el pedido (formato code-review) para que Hakeem revise y pase a QA. **Nunca mergear sin OK.**
 7. **Solicitudes formales en Linear** (los pedidos del paso 6, ya con plantilla). Las **URLs salen del comentario del PR** una vez que el preview quedó arriba y el pipeline en verde (Job 3). Regla de iteración:
    - **Primer QA** (tras tu OK técnico — \`/pr-review\` en READY TO MERGE): se pide TODO junto → **Plantilla A**.
    - **Iteraciones siguientes** (QA o code review devolvió hallazgos y los arreglaste): NO juntas. Primero **Plantilla B** (Code Review), esperá READY TO MERGE, y recién ahí **Plantilla C** (QA).
@@ -176,10 +176,10 @@ write_claude_local() {
 
 Con el estándar técnico ya validado de mi parte (revisión interna /pr-review en READY TO MERGE):
 
-@ignacio — Solicito formalmente revisión de Code Review de tus agentes en el PR:
+@hakeem — Solicito formalmente revisión de Code Review de tus agentes en el PR:
 * PR#XXX (BACKOFFICE): [ivaldovinos-app/apprecio-pulse#XXX](link-linear)
 
-@juli — Solicito formalmente revisión de primer ciclo de QA en este PR#XXX.
+@nicole — Solicito formalmente revisión de primer ciclo de QA en este PR#XXX.
 Comparto los ambientes para revisión de QA una vez que estés disponible
 (teniendo en cuenta que la prioridad actual es ...):
 
@@ -191,7 +191,7 @@ Comparto los ambientes para revisión de QA una vez que estés disponible
 
 ### **Solicitud de Code Review (iteración)**
 
-@ignacio — Apliqué los fixes de la vuelta anterior. Solicito formalmente nueva revisión de Code Review de tus agentes en el PR:
+@hakeem — Apliqué los fixes de la vuelta anterior. Solicito formalmente nueva revisión de Code Review de tus agentes en el PR:
 * PR#XXX (BACKOFFICE): [ivaldovinos-app/apprecio-pulse#XXX](link-linear)
 
 ---
@@ -199,18 +199,18 @@ Comparto los ambientes para revisión de QA una vez que estés disponible
 
 ### **Solicitud de QA (iteración)**
 
-@juli — Code review en READY TO MERGE. Solicito formalmente nuevo ciclo de QA.
+@nicole — Code review en READY TO MERGE. Solicito formalmente nuevo ciclo de QA.
 Comparto los ambientes (teniendo en cuenta que la prioridad actual es ...):
 
 * **Backoffice:** https://pr-XXX.apprecio-pulse-preview.pages.dev
 * **App Pulse:** https://pr-XXX.ryr-app-preview.pages.dev
 
-cc @ignacio (para visibilidad)
+cc @hakeem (para visibilidad)
 
 ---
 **Plantilla D — Listo para Merge (cierre)**
 
-@ignacio
+@hakeem
 
 Ya con las aprobaciones completas:
 
@@ -224,10 +224,10 @@ PRs listos para merge:
 * App cliente: PR #YY [link]
 
 **Orden de deploy obligatorio:** PR #XXX (backend) mergeado ANTES de PR #YY (frontend). ...
-@ignacio esta condición es tuya como dueño del deploy.
+@hakeem esta condición es tuya como dueño del deploy.
 " ;;
     *) flujo_qa_block="
-**Fase 2 — Preparar para QA**: es **back-driven** (tests, \`/pr-review\`, labels \`deploy:staging\`+\`deploy:preview\`+\`skip:e2e\`, preview, borrador a Ignacio) → se maneja desde el back (\`back-pulse-cesar.$SUFFIX\`), ver su \`CLAUDE.local.md\`. Esta es la app (pair): NO dupliques el flujo acá.
+**Fase 2 — Preparar para QA**: es **back-driven** (tests, \`/pr-review\`, labels \`deploy:staging\`+\`deploy:preview\`+\`skip:e2e\`, preview, borrador a Hakeem) → se maneja desde el back (\`back-pulse-cesar.$SUFFIX\`), ver su \`CLAUDE.local.md\`. Esta es la app (pair): NO dupliques el flujo acá.
 " ;;
   esac
   cat > "$target/CLAUDE.local.md" <<EOF
@@ -271,6 +271,15 @@ $pair_line
 ## Engram — política Beat
 - SIEMPRE \`project: "recognition-and-rewards"\` en mem_save / mem_search / mem_context.
 - Contenido PE personal (carrera, evaluaciones, 1:1): \`scope: "personal"\`, NO el project.
+
+## Formato de títulos de issues (Linear)
+Al crear un issue en Linear, usar el formato estandarizado (lote Crecer/Entrenamientos RYR-163..167):
+\`[Pn] <Área> / <Módulo> · <síntoma>\`
+- \`[Pn]\`: severidad entre corchetes (P1/P2/P3). Si no hay severidad definida, **omitir** el prefijo (no inventar peso).
+- \`<Área> / <Módulo>\`: p.ej. \`Crecer / Entrenamientos\`, \`Transversal / Correos\`.
+- \` · \` (interpunct, no guion) como separador antes del síntoma.
+- El texto describe el **síntoma** (qué falla), no la solución; conciso.
+- Ejemplo: \`[P1] Crecer / Entrenamientos · No se visualizan los documentos de evidencia del avance de misiones\`.
 EOF
 }
 
@@ -348,6 +357,18 @@ git -C "$WT_DIR" update-index --skip-worktree supabase/config.toml 2>/dev/null |
 
 echo "$PROJECT_ID" > "$WT_DIR/.supabase-project-id.local"
 
+
+# Vite lee .env.local con MAS prioridad que .env: un .env.local copiado del base
+# por wt copy-ignored pisa el aislamiento del slot (bug 2026-07-13: la app del
+# slot 3 pegaba al :54321 del base). Neutralizarlo, no parchearlo — dos archivos
+# con la misma config es drift asegurado.
+neutralize_env_local() {
+  if [ -f "$1/.env.local" ]; then
+    mv "$1/.env.local" "$1/.env.local.pre-isolate.bak"
+    echo "  (avisa: $1/.env.local movido a .env.local.pre-isolate.bak — pisaba el .env del slot)"
+  fi
+}
+
 # .env del back worktree
 if [ ! -f "$WT_DIR/.env" ] && [ -f "$MAIN_REPO/.env" ]; then
   cp "$MAIN_REPO/.env" "$WT_DIR/.env"
@@ -358,6 +379,7 @@ if [ -f "$WT_DIR/.env" ]; then
   grep -q "^SUPABASE_PUBLIC_URL=" "$WT_DIR/.env" 2>/dev/null \
     && patch_kv "SUPABASE_PUBLIC_URL" "http://127.0.0.1:${API_PORT}" "$WT_DIR/.env" || true
 fi
+neutralize_env_local "$WT_DIR"
 
 # supabase/functions/.env (API_URL para rewrite de storage URLs)
 FUNCTIONS_ENV="$WT_DIR/supabase/functions/.env"
@@ -380,6 +402,7 @@ if [ "$ROLE" = "back" ] && [ "$SUFFIX" != "$WT_NAME" ] && [ -d "$PAIR_DIR" ]; th
   patch_kv "VITE_SUPABASE_URL" "http://127.0.0.1:${API_PORT}" "$APP_ENV"
   patch_kv "VITE_SUPABASE_LOCAL_URL" "http://127.0.0.1:${API_PORT}" "$APP_ENV"
   patch_kv "VITE_PORT" "${APP_VITE}" "$APP_ENV"
+  neutralize_env_local "$PAIR_DIR"
   echo "  App pair:   $PAIR_DIR (.env → API :$API_PORT, Vite :$APP_VITE)"
 else
   echo "  App pair:   (no encontrado para sufijo '$SUFFIX' — se parchea al crearlo desde el back)"

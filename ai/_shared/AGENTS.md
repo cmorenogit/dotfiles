@@ -9,10 +9,13 @@
 ## Equipo Apprecio
 
 **Mi equipo (Producto):**
-- Ignacio Valdovinos — Jefe de Producto (despliega a producción)
-- Julieth — QA principal (intermediaria con Soporte; valida en QA + países)
+- Ignacio Valdovinos — Jefe de Producto
+- Hakeem Ayala — DevOps + code review + merge/deploy a producción (rol técnico que tenía Ignacio)
+- Javier Beth Madariaga — PM, Producto (Beat y app; rol que tenía Nicole)
+- Nicole Fierro — QA principal (rol que tenía Julieth) + apoya temas de producto
 - Samuel, Faber, Kevin — Devs
-- Nicole — Producto (Beat y app)
+
+> Julieth Ruiz se retiró (jul-2026). Hakeem y Javier son los ingresos que cubrieron la reorganización.
 
 **Otros equipos clave:**
 - Soporte (Caco): Paulina deriva tickets, ejecutan queries de BD
@@ -122,19 +125,19 @@ Detalle (stacks, GitHub orgs, repos por servicio): `~/Code/_vault/_work/apprecio
 
 ```
 Diana (SaaS) detecta error
-  → Julieth crea issue Linear + califica FSV
+  → Nicole crea issue Linear + califica FSV
     → César investiga (info BD vía Soporte si necesario)
-      → PR → Julieth valida QA + países → Ignacio despliega prod
-        → Julieth confirma a Diana → cierre
+      → PR → Nicole valida QA + países → Hakeem despliega prod
+        → Nicole confirma a Diana → cierre
 ```
 
 **Destinatarios por tipo de PR:**
 
 | Tipo | Principal | CC |
 |---|---|---|
-| Desarrollo general | @Julieth Ruiz | @Ignacio Valdovinos |
-| Despliegues Fuerza/SL | @Ignacio Valdovinos | @Julieth Ruiz |
-| PRs Incentivos | @Cristian | @Ignacio Valdovinos |
+| Desarrollo general | @Nicole Fierro | @Hakeem Ayala |
+| Despliegues Fuerza/SL | @Hakeem Ayala | @Nicole Fierro |
+| PRs Incentivos | @Cristian | @Hakeem Ayala |
 
 Detalle (templates Issue Linear/PR/Hilo/Mensaje, reglas de formato): `~/Code/_vault/_work/apprecio/_shared/process-fsv.md`
 
