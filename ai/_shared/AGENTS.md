@@ -79,6 +79,8 @@ Conventional Commits en inglés: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`,
 
 **Carpetas base = solo lectura.** Un repo con worktrees (p. ej. `back-pulse-cesar`, `app-rr-cesar`) es la BASE: ahí solo `git fetch` y `git pull --ff-only`. Nada de editar, `checkout -- <paths>`, `restore`, `reset --hard`, `clean -f` ni `stash`. El trabajo va en su worktree. Un guard de Claude Code (`~/.claude/hooks/git-base-guard.py`) lo bloquea; en otros CLI aplica esta regla.
 
+**En worktrees:** nada de `checkout/restore` con pathspec amplio (`.`, `:/`, `*`). La pila de stash es COMPARTIDA entre worktrees: nunca `git stash` a secas, `pop`, `clear`, ni `apply`/`drop` sin ref. Solo `stash push -m <msg> -- <paths>` y `stash apply/drop <ref>` explícitos.
+
 ## Bitácora de issue (memoria viva que sobrevive a sesiones y /compact)
 Issues que **cruzan sesiones o tienen decisiones reales** (no un fix de 1 línea) llevan una bitácora viva: doc `00-bitacora.md` en el vault — 3 niveles (Producto · Seguimiento · Decisiones con pivoteo) — vía skill `/bitacora`. Es **comportamiento, no comandos**: un verbo, dos direcciones, implícito (decir "bitácora" ya implica producto + seguimiento + decisiones/pivoteo).
 - **Al arrancar/retomar** un issue con bitácora → leela primero (ponete al día). No codear sin el contexto.

@@ -9,15 +9,19 @@ sobre `main` (HEAD no se movió, así que el reflog no lo mostró).
 BASE = worktree principal de un repo (git-dir == git-common-dir) que tiene >=1 worktree
 vinculado. Genérico: cubre Beat y cualquier repo futuro sin listas.
 
-Política:
-  | operación                                   | en BASE | en worktree            |
-  |---------------------------------------------|---------|------------------------|
-  | checkout -- <paths> / restore / read-tree   | deny    | allow (archivo puntual) |
-  |   ... con pathspec amplio (., :/, *)        | deny    | ask                    |
-  | reset --hard · clean -f                     | deny    | ask                    |
-  | reset <ref> -- <paths>                      | deny    | allow / ask si amplio  |
-  | stash (salvo list/show)                     | deny    | ask                    |
-  | show · grep · diff · log · fetch · pull ... | allow   | allow                  |
+Política (binaria en worktrees: en modo bypass un "ask" se auto-aprueba, así que no se usa
+donde importa — medido 2026-09-25 sobre 30 días de sesiones Beat):
+  | operación                                        | en BASE | en worktree |
+  |--------------------------------------------------|---------|-------------|
+  | checkout -- <archivo> / restore <archivo>        | deny    | allow       |
+  | checkout/restore con pathspec amplio (., :/, *)  | deny    | deny        |
+  | stash a secas · stash push sin paths · pop ·     | deny    | deny        |
+  |   clear · apply/drop sin ref (cima compartida)   |         |             |
+  | stash push … -- <paths> · apply/drop <ref>       | deny    | allow       |
+  | reset --hard (sincronizar con la rama remota)    | deny    | allow       |
+  | reset <ref> -- <paths>                           | deny    | allow/deny si amplio |
+  | read-tree · clean -f                             | deny    | ask         |
+  | show · grep · diff · log · fetch · pull ...      | allow   | allow       |
 
 La siembra de /adlc-build-loop (`git checkout <base> -- <archivos>` en el worktree) queda
 permitida. Es una baranda, no un sandbox: `bash -c`, scripts y eval no se inspeccionan.
@@ -92,29 +96,40 @@ def is_base(path):
 
 
 def classify(sub, args):
-    """Devuelve (tipo, amplio) o None si la operación no escribe el árbol/index."""
+    """Devuelve (tipo, nivel_en_worktree) si la operación escribe árbol/index/stash; si no, None.
+
+    nivel_en_worktree ∈ {None (allow), "ask", "deny"}. En una BASE todo lo clasificado es deny.
+    """
     paths = args[args.index("--") + 1:] if "--" in args else []
     broad = any(p in BROAD_PATHSPECS for p in paths)
     if sub == "checkout" and "--" in args and paths:
-        return ("checkout de paths", broad)
+        return ("checkout de paths", "deny" if broad else None)
     if sub == "restore":
         pos = [a for a in args if not a.startswith("-")]
-        return ("restore", broad or any(p in BROAD_PATHSPECS for p in pos))
+        wide = broad or any(p in BROAD_PATHSPECS for p in pos)
+        return ("restore", "deny" if wide else None)
     if sub == "read-tree":
-        return ("read-tree", True)
+        return ("read-tree", "ask")
     if sub == "reset":
         if "--hard" in args:
-            return ("reset --hard", True)
+            return ("reset --hard", None)
         if paths:
-            return ("reset de paths", broad)
-    if sub == "clean" and any(a.startswith("-") and "f" in a and not a.startswith("--") for a in args):
-        return ("clean -f", True)
-    if sub == "clean" and "--force" in args:
-        return ("clean -f", True)
+            return ("reset de paths", "deny" if broad else None)
+    if sub == "clean" and ("--force" in args or any(
+            a.startswith("-") and not a.startswith("--") and "f" in a for a in args)):
+        return ("clean -f", "ask")
     if sub == "stash":
-        action = next((a for a in args if not a.startswith("-")), "push")
-        if action not in ("list", "show"):
-            return (f"stash {action}", True)
+        pos = [a for a in args if not a.startswith("-")]
+        action = pos[0] if pos else "push"
+        if action in ("list", "show", "create", "store"):
+            return None
+        if action in ("push", "save"):
+            ok = bool(paths) and not broad
+            return (f"stash {action}" + ("" if ok else " sin paths"), None if ok else "deny")
+        if action in ("apply", "drop", "branch"):
+            has_ref = len(pos) > 1
+            return (f"stash {action}" + ("" if has_ref else " sin ref"), None if has_ref else "deny")
+        return (f"stash {action}", "deny")  # pop, clear y cualquier otra: cima de la pila compartida
     return None
 
 
@@ -145,13 +160,15 @@ def inspect(command, cwd):
         hit = classify(rest[0], rest[1:])
         if not hit:
             continue
-        kind, broad = hit
+        kind, level = hit
         if is_base(target):
             decision = ("deny", f"`git {kind}` en la carpeta BASE `{target}` (solo lectura: "
                                 f"fetch y pull --ff-only). {ALT} El trabajo va en su worktree.")
-        elif broad:
-            decision = ("ask", f"`git {kind}` con alcance amplio en `{target}`: sobrescribe "
-                               f"árbol/index o la pila de stash compartida. {ALT}")
+        elif level:
+            decision = (level, f"`git {kind}` en `{target}`: sobrescribe el árbol/index con alcance "
+                               f"amplio o toca la cima de la pila de stash, compartida entre "
+                               f"worktrees. {ALT} Para stash, usa `stash push -m <msg> -- <paths>` "
+                               f"y `stash apply/drop <ref>` explícitos.")
         else:
             continue
         if worst is None or (decision[0] == "deny" and worst[0] != "deny"):
