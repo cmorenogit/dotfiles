@@ -179,6 +179,35 @@ cols()  { psqlw -c "\\d \$1"; }
 QEOF
 }
 
+# Engram: fija el proyecto de memoria de Beat en la sesión de Claude de este worktree.
+# Sin esto engram lo deduce del remoto de git ("apprecio-pulse" en el back, "ryr-39255" en la app)
+# y la memoria de Beat quedó partida en 4 proyectos (203 resúmenes de sesión fuera de
+# "recognition-and-rewards", verificado 25-sep-2026). El MCP hereda el `env` de los settings
+# del proyecto (probado: project_source = process_override).
+write_engram_env() {
+  local dir="$1"
+  [ -d "$dir" ] || return 0
+  mkdir -p "$dir/.claude"
+  if ! git -C "$dir" check-ignore -q .claude/settings.local.json 2>/dev/null; then
+    local ex; ex="$(git -C "$dir" rev-parse --git-common-dir)/info/exclude"
+    case "$ex" in /*) ;; *) ex="$dir/$ex" ;; esac
+    grep -qxF ".claude/settings.local.json" "$ex" 2>/dev/null || echo ".claude/settings.local.json" >> "$ex"
+  fi
+  python3 - "$dir/.claude/settings.local.json" <<'PYENV'
+import json, os, sys
+p = sys.argv[1]
+d = {}
+if os.path.exists(p):
+    try:
+        d = json.load(open(p))
+    except Exception:
+        sys.exit(0)  # JSON inválido: no lo pisamos
+d.setdefault("env", {})["ENGRAM_PROJECT"] = "recognition-and-rewards"
+json.dump(d, open(p, "w"), indent=2, ensure_ascii=False)
+open(p, "a").write("\n")
+PYENV
+}
+
 # Setea las variables de puerto globales a partir de un slot.
 compute_ports() {
   local slot="$1"
@@ -239,7 +268,7 @@ write_claude_local() {
 **Fase 1 — Desarrollo (ADLC)**
 1. `/adlc-start` ANTES de tocar código: spec en `docs/specs/*.md` (scope IN/OUT/DEFER, subPRs, decisiones de producto en tabla). Sin OK de César del plan, no se codea.
 2. **No PR sin spec**: el spec existe Y el body del PR lo cita (`Spec: docs/specs/...md`) ANTES de abrirlo; si no, el gate de CI queda rojo PERMANENTE ("Missing spec file path"). `## Ownership` en prosa: `Build: César Moreno`.
-3. Build de cada subPR: `/adlc-build-loop <spec> --trunk <trunk>` (13 pasos; el 12 = `/pr-review`, no existe `../pr-review-skills`). Tests nuevos se siembran: rojos contra la base, verdes con el fix (commiteá antes de `git checkout <base> -- <archivos>`).
+3. Build de cada subPR: `/adlc-build-loop <spec> --trunk <trunk>` (13 pasos; el 12 = `/pr-review`, no existe `../pr-review-skills`). En el paso 4 (`/adlc-qa-cases`) barré además `~/Code/_vault/_work/apprecio/_shared/qa-dimensiones.md` (escapes reales de Beat: hermanos de clase, invariante relajado, input multi-paso, roundtrip). Tests nuevos se siembran: rojos contra la base, verdes con el fix (commiteá antes de `git checkout <base> -- <archivos>`).
 4. **SubPRs = un worktree propio**: desde la base, `wt switch -c <rama-subpr> --base <trunk>` (crea back+app del trunk, slot propio). Implementadores en paralelo SOLO en worktrees distintos. Tras el merge: `wt remove <rama-subpr>` (libera el slot).
 5. Merge subPR → trunk: `gh pr merge <N> -R ivaldovinos-app/apprecio-pulse --merge` (NUNCA `--squash`; trunk → main lo mergea Hakeem). Solo con gate PASS/WARN, CI verde (leer JUnit), `/pr-review` READY TO MERGE y OK de César.
 6. Gate local IGUAL a CI, con todo commiteado: `bash ~/.config/worktrunk/scripts/beat-gate.sh --body <archivo>` (antes del PR) o `--pr <N>`.
@@ -263,28 +292,35 @@ write_claude_local() {
 6. **Escalera QA sobre el PREVIEW** (Convergence Mode: revalida 7, 4 y 3): `/adlc-qa-ladder <PR> --issue <ID>`. Veredicto contra el ISSUE. **Sin esta escalera en PASS/PASS CONDICIONADO no se redacta la solicitud.** C0/C1 → subPR de fix → redeploy → escalera otra vez.
 7. **Antes del borrador**: HEAD del último `/pr-review` == HEAD actual (si no, revisar el delta); re-leer el hilo de Linear desde el último comentario visto; cada cifra/afirmación del borrador con su comando o fuente.
 8. **Solicitud** (borrador vía `/voz`; César publica; 1 OK = 1 publicación): un solo comentario; el issue pasa a **In Review**. Destinatario por PRECEDENTE (bitácora `publicar-*.md` / hilo del issue o del padre). URLs del comentario "Preview Environment" del PR. Sin rutas locales, bitácora ni engram en el texto; cc al final; nunca "merge" ni "si quieres lo hago yo".
-   - **Primera solicitud** → Plantilla A.
+   - **Primera solicitud** → según el TIPO de issue: **feature/mejora de producto** (superficie de usuario, trunk con varios subPRs) → **Plantilla A-F** (CR @hakeem + QA @nicole); **issue chico / fix de motor, DB o plataforma** → **Plantilla A-W** (QA worker de @ignacio, cc @hakeem). Si el issue o el padre ya fijó otro reparto, gana el precedente.
    - **Iteración tras un veredicto** → REPLY (`parentId`) al comentario del veredicto con las condiciones cerradas y la evidencia nueva; no un comentario nuevo de primer nivel.
    - **Cierre** (aprobaciones completas) → Plantilla D.
 
 ---
-**Plantilla A — Solicitud de QA + Code Review (default vigente, RYR-286/296/298/300)**
+**Plantilla A-F — Feature de producto: Code Review + QA (primera solicitud)**
 
-### **Solicitud formal de QA y Code Review**
+### **Solicitudes formales**
 
-@ignacio — El issue pasa a **In Review**. Solicito formalmente QA con tu worker y code review de los PRs, con el estándar técnico validado de mi parte (escalera QA sobre el preview + `/pr-review` en READY TO MERGE):
+Con el estándar técnico validado de mi parte (escalera QA sobre el preview + `/pr-review` en READY TO MERGE):
+
+@hakeem — Solicito formalmente code review de tus agentes en los PRs:
 * PR#XXX (BACKOFFICE): [ivaldovinos-app/apprecio-pulse#XXX](link)
 * PR#YY (APP): [ivaldovinos-app/ryr-39255#YY](link)
 
-Ambientes:
+@nicole — Solicito formalmente el primer ciclo de QA. Ambientes:
 * **Backoffice:** https://pr-XXX.apprecio-pulse-preview.pages.dev
 * **App:** https://pr-XXX.ryr-app-preview.pages.dev
+
+---
+**Plantilla A-W — Issue chico o fix de motor/DB/plataforma: QA worker (primera solicitud)**
+
+@ignacio — El issue pasa a **In Review** con los PRs listos para tu QA worker. Te dejo los ambientes y el mapa de lo que cambió, para que la corrida apunte donde hay riesgo real:
+* PR#XXX (BACKOFFICE): [ivaldovinos-app/apprecio-pulse#XXX](link)
+* **Backoffice:** https://pr-XXX.apprecio-pulse-preview.pages.dev
 
 Mapa de riesgo: <invariantes · dónde apunta el riesgo · qué es preexistente y no del PR>.
 
 cc @hakeem
-
-> Si el precedente del issue o del padre fija otro reparto (CR a @hakeem con sus agentes, QA a @nicole), seguí el precedente.
 
 ---
 **Plantilla D — Listo para merge (cierre)**
@@ -397,6 +433,7 @@ if [ "$MODE" = "doc" ]; then
   fi
   compute_ports "$SLOT"
   [ "$BACK_WT" = "$WT_DIR" ] && write_beat_helpers "$WT_DIR" "$PROJECT_ID"
+  write_engram_env "$WT_DIR"
   write_claude_local "$WT_DIR" "$ROLE_LABEL" "$(branch_of "$WT_DIR")" "$PAIR_LABEL" "$PAIR_DIR"
   exit 0
 fi
@@ -512,8 +549,10 @@ if command -v wt >/dev/null 2>&1; then
 fi
 
 # CLAUDE.local.md rico en este worktree y en el pair (si existe).
+write_engram_env "$WT_DIR"
 write_claude_local "$WT_DIR" "$ROLE_LABEL" "$(branch_of "$WT_DIR")" "$PAIR_LABEL" "$PAIR_DIR"
 if [ -d "$PAIR_DIR" ]; then
+  write_engram_env "$PAIR_DIR"
   write_claude_local "$PAIR_DIR" "$PAIR_LABEL" "$(branch_of "$PAIR_DIR")" "$ROLE_LABEL" "$WT_DIR"
 fi
 

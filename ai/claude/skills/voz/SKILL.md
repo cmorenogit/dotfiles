@@ -20,7 +20,7 @@ Toma el contenido de una respuesta y lo deja listo para pegar en Linear: que se 
 9. **Una publicación = un comentario.** Si el issue tiene un veredicto o pedido abierto (de Ignacio, Hakeem, Nicole), la respuesta va como **reply** a ese comentario (`parentId`), no como comentario nuevo de primer nivel.
 10. **Lo que nunca va en el texto**: rutas locales, la bitácora, engram o el vault (son memoria personal y confunden); ofrecer "si quieres lo hago yo"; "sin merge hasta tu OK" u otras menciones a mergear (César no mergea: lo hace Hakeem). El `cc` va al final. Cada ID citado es del hilo o se marca "(relacionado)".
 11. **Tope**: ≤12 líneas fuera de los bloques de código. Si no entra, lo que sobra es contexto que no hace falta.
-12. **Plantilla según el momento** (la define el precedente del issue o del padre): primera solicitud → Plantilla A del `CLAUDE.local.md` del worktree; iteración tras un veredicto → reply con las condiciones cerradas y la evidencia nueva; cierre → Plantilla D.
+12. **Plantilla según el momento** (la define el precedente del issue o del padre): primera solicitud → Plantilla A-F (feature: CR @hakeem + QA @nicole) o A-W (issue chico / fix de motor: QA worker de @ignacio) del `CLAUDE.local.md` del worktree; iteración tras un veredicto → reply con las condiciones cerradas y la evidencia nueva; cierre → Plantilla D.
 
 ## Salida
 
