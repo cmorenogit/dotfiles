@@ -11,7 +11,7 @@
 # User hooks no requieren approval (son tuyos, no vienen de un proyecto externo).
 
 [pre-start]
-pair-beat = 'bash "$HOME/.config/worktrunk/scripts/beat-pair.sh" "{{ worktree_path }}" "{{ branch }}" "{{ branch | sanitize }}"'
+pair-beat = 'bash "$HOME/.config/worktrunk/scripts/beat-pair.sh" "{{ worktree_path }}" "{{ branch }}" "{{ branch | sanitize }}" "{{ base | default("main") }}"'
 
 [post-switch]
 refresh-beat = '''
@@ -41,3 +41,7 @@ grep -qxF "CLAUDE.local.md" "$common_dir/info/exclude" 2>/dev/null || echo "CLAU
 # tiene cambios sin commitear lo deja y lo marca ✗). Reporte visual espejo de beat-prep.
 # Nunca aborta (sale 0) → el back se elimina igual.
 pre-remove.unpair-beat = 'bash "$HOME/.config/worktrunk/scripts/beat-unpair.sh" "{{ branch }}"'
+# pre-switch (BLOQUEANTE, corre en el origen ANTES de crear): verifica que las bases back+app
+# estén limpias y al día. Base sucia → aborta (incidente 15/16-sep-2026: base con 746 archivos
+# del padre staged). target_worktree_path vacío = creación; con valor = switch a uno existente (no-op).
+pre-switch.base-health = 'bash "$HOME/.config/worktrunk/scripts/beat-base-health.sh" {{ target_worktree_path | default("") }}'

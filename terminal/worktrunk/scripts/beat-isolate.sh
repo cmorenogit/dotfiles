@@ -16,6 +16,15 @@
 #   (default)     aísla el worktree (slot, config.toml, .env) + escribe CLAUDE.local.md
 #   --check       solo reporta si el worktree está aislado
 #   --doc-only    solo (re)genera el CLAUDE.local.md leyendo el slot ya asignado
+#   --release-config  suelta config.toml (no-skip-worktree + contenido de HEAD) ANTES de
+#                     merge/rebase: sin esto git choca con el skip-worktree si upstream lo cambió
+#   --refresh-config  regenera config.toml desde HEAD con el slot ya asignado, DESPUÉS del
+#                     merge/rebase (idempotente)
+#
+# config.toml: se genera desde `git show HEAD:supabase/config.toml` sustituyendo SOLO
+# project_id y puertos. Antes era "header de puertos + [functions.*] del working tree de la
+# BASE": perdía [api].schemas (gw) y [auth], y dependía de una base que puede estar sucia
+# (incidente 24-sep-2026: 3 worktrees rearmados a mano distinto; PLA-29 perdió [auth]).
 #
 # Se dispara desde ~/.config/worktrunk/config.toml → [projects."…apprecio-pulse"]
 # (post-start) y desde el hook post-switch (refresh-rr → --doc-only). Opera sobre
@@ -28,11 +37,13 @@ BASE_PROJECT_REF="miqfhuhcwrniqtxmidjb"
 
 usage() {
   cat <<USAGE
-Usage: $0 [--check | --doc-only]
+Usage: $0 [--check | --doc-only | --release-config | --refresh-config]
 
-  (sin args)   Aísla el worktree actual (puertos+project_id por slot) y escribe CLAUDE.local.md.
-  --check      Solo verifica si el worktree está aislado.
-  --doc-only   Solo regenera el CLAUDE.local.md (no reasigna ni reescribe config).
+  (sin args)        Aísla el worktree actual (puertos+project_id por slot) y escribe CLAUDE.local.md.
+  --check           Solo verifica si el worktree está aislado.
+  --doc-only        Solo regenera el CLAUDE.local.md (no reasigna ni reescribe config).
+  --release-config  Antes de merge/rebase: config.toml vuelve a HEAD y sale de skip-worktree.
+  --refresh-config  Después de merge/rebase: regenera config.toml desde HEAD con el slot actual.
 
 Debe correrse desde dentro de un worktree Beat (no desde el repo principal).
 USAGE
@@ -44,6 +55,8 @@ case "${1:-}" in
   --help) usage ;;
   --check) MODE="check" ;;
   --doc-only) MODE="doc" ;;
+  --release-config) MODE="release" ;;
+  --refresh-config) MODE="refresh" ;;
   "") ;;
   *) echo "ERROR: opción desconocida: $1"; usage ;;
 esac
@@ -61,6 +74,7 @@ if [ "$WT_DIR" = "$MAIN_REPO" ]; then
 fi
 
 SLOT_FILE="$WT_DIR/.worktree-slot"
+CONFIG_FILE="$WT_DIR/supabase/config.toml"
 
 # ── Identidad del worktree y su pair ─────────────────────────────────────────
 # wt nombra los worktrees <base>.<branch|sanitize>; el pair de la otra app comparte
@@ -99,6 +113,52 @@ patch_kv() {  # key value file — set-or-append portable
   else
     echo "$1=$2" >> "$3"
   fi
+}
+
+# config.toml aislado = el de HEAD de ESTA rama con project_id y puertos del slot.
+# Solo toca claves de puerto de las secciones de puertos; todo lo demás ([api].schemas,
+# [auth], [functions.*], …) queda tal cual está en la rama. Secciones de puertos que la
+# rama no declare se agregan al final para no caer en los puertos del base (:54321…).
+write_isolated_config() {
+  local src tmp="$CONFIG_FILE.wt-tmp.$$"
+  src="$(git -C "$WT_DIR" show HEAD:supabase/config.toml 2>/dev/null || true)"
+  if [ -z "$src" ]; then
+    echo "ERROR: HEAD no tiene supabase/config.toml — no puedo generar el config aislado."
+    return 1
+  fi
+  printf '%s\n' "$src" | awk \
+    -v pid="$PROJECT_ID" -v api="$API_PORT" -v db="$DB_PORT" -v shadow="$SHADOW_PORT" \
+    -v studio="$STUDIO_PORT" -v inbucket="$INBUCKET_PORT" -v analytics="$ANALYTICS_PORT" \
+    -v pooler="$POOLER_PORT" '
+    BEGIN {
+      keys["api"] = "port = " api
+      keys["db"] = "port = " db "\nshadow_port = " shadow
+      keys["studio"] = "port = " studio
+      keys["inbucket"] = "port = " inbucket
+      keys["analytics"] = "port = " analytics
+      keys["db.pooler"] = "port = " pooler
+      order = "api db studio inbucket analytics db.pooler"
+      sec = ""; pid_done = 0
+    }
+    /^\[[^]]+\]/ {
+      sec = $0; gsub(/^\[|\].*$/, "", sec)
+      print
+      if (sec in keys) { print keys[sec]; seen[sec] = 1 }
+      next
+    }
+    sec == "" && /^project_id[ \t]*=/ { print "project_id = \"" pid "\""; pid_done = 1; next }
+    (sec in keys) && /^(port|shadow_port)[ \t]*=/ { next }
+    { print }
+    END {
+      if (!pid_done) print "project_id = \"" pid "\""
+      n = split(order, o, " ")
+      for (i = 1; i <= n; i++) if (!(o[i] in seen)) printf "\n[%s]\n%s\n", o[i], keys[o[i]]
+    }' > "$tmp" && mv "$tmp" "$CONFIG_FILE"
+  # El config.toml aislado es LOCAL al slot: no debe ensuciar git ni commitearse.
+  # skip-worktree hace que git ignore estos cambios sin destrackear el archivo →
+  # evita el "M supabase/config.toml" que bloquea wt remove, confunde a beat-unpair
+  # y se filtra a commits (contaminando PRs con el project_id/puertos del slot).
+  git -C "$WT_DIR" update-index --skip-worktree supabase/config.toml 2>/dev/null || true
 }
 
 # Setea las variables de puerto globales a partir de un slot.
@@ -258,6 +318,9 @@ $pair_line
 - project_id: ${PROJECT_ID}
 - Vite      → backoffice :${BACK_VITE} · app :${APP_VITE}
 - Levantar (desde el back \`back-pulse-cesar.${SUFFIX}\`): \`supabase start\` y \`npm run dev\`
+- \`supabase/config.toml\` es LOCAL al slot (skip-worktree, generado desde HEAD). Para merge/rebase
+  NO lo rearmes a mano: \`bash ~/.config/worktrunk/scripts/beat-isolate.sh --release-config\` →
+  merge/rebase → \`bash ~/.config/worktrunk/scripts/beat-isolate.sh --refresh-config\`.
 
 ## Crear OTRO worktree (MI flujo = worktrunk, back-driven)
 - Desde \`back-pulse-cesar\`: \`wt switch --create <rama>\` → crea el par de la app y aísla solo.
@@ -315,6 +378,33 @@ if [ "$MODE" = "doc" ]; then
   exit 0
 fi
 
+# ── --release-config / --refresh-config ─────────────────────────────────────
+# Ciclo de merge/rebase sin rearmar config.toml a mano:
+#   beat-isolate.sh --release-config  →  git merge/rebase …  →  beat-isolate.sh --refresh-config
+if [ "$MODE" = "release" ] || [ "$MODE" = "refresh" ]; then
+  if [ "$BACK_WT" != "$WT_DIR" ]; then
+    echo "ERROR: config.toml vive en el back — corré esto desde $BACK_WT"
+    exit 1
+  fi
+  if [ "$MODE" = "release" ]; then
+    git -C "$WT_DIR" update-index --no-skip-worktree supabase/config.toml
+    git -C "$WT_DIR" checkout HEAD -- supabase/config.toml
+    echo "config.toml liberado (contenido de HEAD, fuera de skip-worktree). Hacé el merge/rebase y"
+    echo "después: bash ~/.config/worktrunk/scripts/beat-isolate.sh --refresh-config"
+    exit 0
+  fi
+  SLOT=""
+  [ -f "$SLOT_FILE" ] && SLOT="$(tr -d '[:space:]' < "$SLOT_FILE")"
+  if [ -z "$SLOT" ]; then
+    echo "ERROR: worktree sin slot — corré beat-isolate sin argumentos primero."
+    exit 1
+  fi
+  compute_ports "$SLOT"
+  write_isolated_config
+  echo "config.toml regenerado desde HEAD para el slot $SLOT ($PROJECT_ID, API :$API_PORT)."
+  exit 0
+fi
+
 # ── apply (default): aísla este worktree ─────────────────────────────────────
 SLOT=$(pick_slot)
 if [ -z "$SLOT" ]; then
@@ -333,27 +423,8 @@ echo ""
 
 echo "$SLOT" > "$SLOT_FILE"
 
-# config.toml aislado: header de puertos del slot + SOLO las [functions.*] de main.
-CONFIG_FILE="$WT_DIR/supabase/config.toml"
-MAIN_CONFIG="$MAIN_REPO/supabase/config.toml"
-{
-  echo "project_id = \"${PROJECT_ID}\""
-  echo ""
-  echo "[api]";       echo "port = ${API_PORT}";       echo ""
-  echo "[db]";        echo "port = ${DB_PORT}";        echo "shadow_port = ${SHADOW_PORT}"; echo ""
-  echo "[studio]";    echo "port = ${STUDIO_PORT}";    echo ""
-  echo "[inbucket]";  echo "port = ${INBUCKET_PORT}";  echo ""
-  echo "[analytics]"; echo "port = ${ANALYTICS_PORT}"; echo ""
-  echo "[db.pooler]"; echo "port = ${POOLER_PORT}";    echo ""
-  # SOLO los [functions.*] de main (NO sus tablas de puerto: duplicarían [api]/[db]/...).
-  sed -n '/^\[functions/,$p' "$MAIN_CONFIG"
-} > "$CONFIG_FILE"
-
-# El config.toml aislado es LOCAL al slot: no debe ensuciar git ni commitearse.
-# skip-worktree hace que git ignore estos cambios sin destrackear el archivo →
-# evita el "M supabase/config.toml" que bloquea wt remove, confunde a beat-unpair
-# y se filtra a commits (contaminando PRs con el project_id/puertos del slot).
-git -C "$WT_DIR" update-index --skip-worktree supabase/config.toml 2>/dev/null || true
+# config.toml aislado: el de HEAD de esta rama con project_id + puertos del slot (+ skip-worktree).
+write_isolated_config
 
 echo "$PROJECT_ID" > "$WT_DIR/.supabase-project-id.local"
 

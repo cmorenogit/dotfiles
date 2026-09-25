@@ -14,6 +14,8 @@ set +e
 WT_PATH="$1"
 BRANCH="$2"
 BRANCH_SAN="$3"
+BASE_REF="${4:-main}"          # {{ base }} del wt switch --create (acepta "main" u "origin/main")
+BASE_REF="${BASE_REF#origin/}"
 
 # Gate: solo actúa en los repos Beat (apprecio-pulse / ryr). Otros → no-op.
 remote=$(git -C "$WT_PATH" config --get remote.origin.url 2>/dev/null || echo "")
@@ -54,7 +56,14 @@ if [ -d "$paired" ]; then
     if git -C "$paired" show-ref --verify --quiet "refs/heads/$BRANCH"; then
       git -C "$paired" worktree add "$paired_worktree_path" "$BRANCH" 2>&1 | sed 's/^/[beat-pair] /'
     else
-      git -C "$paired" worktree add -b "$BRANCH" "$paired_worktree_path" 2>&1 | sed 's/^/[beat-pair] /'
+      # Partir de la MISMA base remota que el back (--base del wt, p. ej. un trunk), no del HEAD
+      # de la carpeta base del pair (puede estar atrasado u en otra rama). --no-track: una rama
+      # nacida de origin/main no debe quedar con upstream origin/main (el push iría a main).
+      git -C "$paired" fetch -q origin 2>/dev/null
+      start="origin/main"
+      git -C "$paired" rev-parse -q --verify "refs/remotes/origin/$BASE_REF" >/dev/null && start="origin/$BASE_REF"
+      echo "[beat-pair] Rama nueva $BRANCH desde $start"
+      git -C "$paired" worktree add --no-track -b "$BRANCH" "$paired_worktree_path" "$start" 2>&1 | sed 's/^/[beat-pair] /'
     fi
     existing=$(git -C "$paired" worktree list | awk -v b="[$BRANCH]" '$NF == b {print $1; exit}')
   fi
