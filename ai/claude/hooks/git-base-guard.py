@@ -23,6 +23,17 @@ donde importa — medido 2026-09-25 sobre 30 días de sesiones Beat):
   | read-tree · clean -f                             | deny    | ask         |
   | show · grep · diff · log · fetch · pull ...      | allow   | allow       |
 
+Además (análisis de 212 sesiones Beat, 25-sep-2026):
+  - worktree: `git checkout <ref> -- <paths>` sobre archivos con cambios SIN commitear → deny
+    (RYR-287: revertir una siembra borró el fix entero).
+  - worktree: cambiar de rama (switch / checkout <rama> / -b) con cambios trackeados → deny
+    (RYR-298: dos implementadores en el mismo worktree mezclaron el WIP entre subPRs).
+  - supabase: `db push`, `functions deploy`, `link`, `secrets set` → deny siempre (remoto = CI/Hakeem);
+    `db reset`, `start`, `stop`, `migration up`, `functions serve` → deny en la BASE y en un
+    worktree sin `.worktree-slot` (correría sobre el stack de la base).
+  - gh pr merge: deny si la base es main (lo mergea Hakeem) o si usa --squash (subPR→trunk va con --merge).
+  - preview_db.py … --confirm: deny (la escritura en un preview la corre César con `!`).
+
 La siembra de /adlc-build-loop (`git checkout <base> -- <archivos>` en el worktree) queda
 permitida. Es una baranda, no un sandbox: `bash -c`, scripts y eval no se inspeccionan.
 Ante cualquier error interno, deja pasar (fail-open) para no trabar la sesión.
@@ -95,6 +106,56 @@ def is_base(path):
     return sum(1 for l in wts.splitlines() if l.startswith("worktree ")) > 1
 
 
+def toplevel(path):
+    return git_out(["rev-parse", "--show-toplevel"], path)
+
+
+def dirty_tracked(path, paths=None):
+    """True si hay cambios trackeados sin commitear (en todo el árbol o en `paths`)."""
+    args = ["status", "--porcelain", "--untracked-files=no"] + (["--", *paths] if paths else [])
+    out = git_out(args, path)
+    return bool(out)
+
+
+def supabase_rule(args, target):
+    sub = " ".join(a for a in args if not a.startswith("-"))[:40]
+    remote = ("db push", "functions deploy", "link", "secrets set", "db remote")
+    local = ("db reset", "start", "stop", "migration up", "functions serve")
+    if any(sub.startswith(r) for r in remote):
+        return ("deny", f"`supabase {sub}` toca un proyecto REMOTO: los deploys y el link los hace CI/Hakeem, nunca una sesión local.")
+    if any(sub.startswith(r) for r in local):
+        top = toplevel(target) or target
+        if is_base(top):
+            return ("deny", f"`supabase {sub}` en la BASE `{top}` opera el stack de la base. Para analizar otra rama usá su worktree o `git show origin/<rama>:<path>`.")
+        if not os.path.isfile(os.path.join(top, ".worktree-slot")) and os.path.isdir(os.path.join(top, "supabase")):
+            return ("deny", f"`supabase {sub}` en `{top}` sin `.worktree-slot`: el worktree no está aislado y correría sobre el stack de la base. Corré `~/.config/worktrunk/scripts/beat-isolate.sh` primero.")
+    return None
+
+
+def gh_merge_rule(args, target):
+    if len(args) < 2 or args[0] != "pr" or args[1] != "merge":
+        return None
+    rest = args[2:]
+    repo, num, i = None, None, 0
+    while i < len(rest):
+        a = rest[i]
+        if a in ("-R", "--repo") and i + 1 < len(rest):
+            repo = rest[i + 1]; i += 2; continue
+        if not a.startswith("-") and num is None:
+            num = a
+        i += 1
+    if "--squash" in rest or "-s" in rest:
+        return ("deny", "`gh pr merge --squash`: los subPR → trunk se mergean con `--merge` (regla de César, 08-sep); trunk → main lo mergea Hakeem.")
+    cmd = ["gh", "pr", "view"] + ([num] if num else []) + (["-R", repo] if repo else []) + ["--json", "baseRefName", "-q", ".baseRefName"]
+    try:
+        base = subprocess.run(cmd, cwd=target, capture_output=True, text=True, timeout=6).stdout.strip()
+    except Exception:
+        base = ""
+    if base == "main":
+        return ("deny", "`gh pr merge` hacia main: el merge y deploy a main lo hace Hakeem, nunca una sesión.")
+    return None
+
+
 def classify(sub, args):
     """Devuelve (tipo, nivel_en_worktree) si la operación escribe árbol/index/stash; si no, None.
 
@@ -145,7 +206,23 @@ def inspect(command, cwd):
         if seg[0] in ("cd", "pushd") and len(seg) > 1:
             cur = os.path.normpath(os.path.join(cur, os.path.expanduser(seg[1])))
             continue
-        if seg[0] != "git":
+        tool = os.path.basename(seg[0])
+        if tool == "npx" and len(seg) > 1 and seg[1] == "supabase":
+            tool, seg = "supabase", seg[1:]
+        if tool == "supabase":
+            hit = supabase_rule(seg[1:], cur)
+            if hit and (worst is None or worst[0] != "deny"):
+                worst = hit
+            continue
+        if tool == "gh":
+            hit = gh_merge_rule(seg[1:], cur)
+            if hit:
+                worst = hit
+            continue
+        if any("preview_db.py" in t for t in seg) and "--confirm" in seg:
+            worst = ("deny", "`preview_db.py … --confirm` escribe en la BD de un preview: mostrá el dry-run y que César lo corra con `!`.")
+            continue
+        if tool != "git":
             continue
         target, rest = cur, seg[1:]
         while rest and rest[0].startswith("-"):  # opciones globales: -C, -c, --no-pager...
@@ -157,7 +234,21 @@ def inspect(command, cwd):
                 rest = rest[1:]
         if not rest:
             continue
-        hit = classify(rest[0], rest[1:])
+        sub, sargs = rest[0], rest[1:]
+        # Reglas que dependen del estado del worktree (solo fuera de la base).
+        if not is_base(target):
+            if sub == "checkout" and "--" in sargs:
+                before = [a for a in sargs[:sargs.index("--")] if not a.startswith("-")]
+                paths = [p for p in sargs[sargs.index("--") + 1:] if p not in BROAD_PATHSPECS]
+                if before and paths and dirty_tracked(target, paths):
+                    worst = ("deny", f"`git checkout {before[0]} -- …` sobre archivos con cambios SIN commitear en `{target}`: se pierden. Commiteá primero (o `cp` de respaldo) y recién ahí siembra/revierte.")
+                    continue
+            switching = (sub == "switch" and any(not a.startswith("-") for a in sargs)) or \
+                        (sub == "checkout" and "--" not in sargs and any(not a.startswith("-") for a in sargs))
+            if switching and dirty_tracked(target):
+                worst = ("deny", f"Cambio de rama en `{target}` con cambios trackeados sin commitear: el WIP viajaría a la otra rama. Commiteá o terminá antes; implementadores en paralelo van en worktrees distintos (`wt switch -c <sub> --base <trunk>`).")
+                continue
+        hit = classify(sub, sargs)
         if not hit:
             continue
         kind, level = hit
@@ -181,7 +272,7 @@ def main():
         payload = json.load(sys.stdin)
         command = (payload.get("tool_input") or {}).get("command") or ""
         cwd = payload.get("cwd") or os.getcwd()
-        if "git" not in command:
+        if not any(k in command for k in ("git", "supabase", "gh ", "preview_db")):
             return
         try:
             result = inspect(command, cwd)
