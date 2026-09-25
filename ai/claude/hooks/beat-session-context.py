@@ -57,9 +57,20 @@ def main():
     if not parts:
         print(f"[beat] Bitácora de {issue}: {path} (sin sección 'Estado actual'; leela antes de actuar).")
         return
+    # Borradores sin publicar del issue (convención de /implementar: frontmatter status: borrador).
+    pend = []
+    folder = os.path.dirname(path)
+    for f in sorted(os.listdir(folder)):
+        if f.startswith("publicar-") and f.endswith(".md"):
+            head = open(os.path.join(folder, f), encoding="utf-8").read(400)
+            if re.search(r"^status:\s*borrador\s*$", head, re.M):
+                pend.append(f)
     body = "\n\n".join(parts)
     if len(body) > MAX_CHARS:
         body = body[:MAX_CHARS] + "\n…(recortado; leé la bitácora completa)"
+    if pend:  # después del recorte: los borradores pendientes nunca se pierden
+        body += ("\n\n## Borradores SIN PUBLICAR\n" + "\n".join(f"- {folder}/{f}" for f in pend)
+                 + "\n(César publica; al confirmar, marcar `status: publicado`.)")
     print(f"[beat] FOTO de la bitácora de {issue} ({path}) — punto de partida de esta sesión; "
           f"verificá contra Linear/GitHub antes de afirmar estados de otros:\n\n{body}")
 

@@ -31,7 +31,10 @@ Además (análisis de 212 sesiones Beat, 25-sep-2026):
   - supabase: `db push`, `functions deploy`, `link`, `secrets set` → deny siempre (remoto = CI/Hakeem);
     `db reset`, `start`, `stop`, `migration up`, `functions serve` → deny en la BASE y en un
     worktree sin `.worktree-slot` (correría sobre el stack de la base).
-  - gh pr merge: deny si la base es main (lo mergea Hakeem) o si usa --squash (subPR→trunk va con --merge).
+  - gh pr merge: deny si la base es main (lo mergea Hakeem), si usa --squash (subPR→trunk va con --merge)
+    o si el PR tiene checks pendientes o en rojo (el merge al trunk lo valida ADLC + CI).
+  - gh pr create hacia main en apprecio-pulse sin los 3 labels del preview → deny (usar beat-promote.sh);
+    quitar deploy:preview/deploy:staging de un PR → deny (destruye el preview / saltea tests).
   - preview_db.py … --confirm: deny (la escritura en un preview la corre César con `!`).
 
 La siembra de /adlc-build-loop (`git checkout <base> -- <archivos>` en el worktree) queda
@@ -132,29 +135,76 @@ def supabase_rule(args, target):
     return None
 
 
-def gh_merge_rule(args, target):
-    if len(args) < 2 or args[0] != "pr" or args[1] != "merge":
-        return None
-    rest = args[2:]
-    repo, num, i = None, None, 0
+REQUIRED_PREVIEW_LABELS = ("deploy:staging", "deploy:preview", "skip:e2e")
+
+
+def _gh_opts(rest):
+    """Separa -R/--repo, las etiquetas (--label/-l, admite coma) y el primer posicional."""
+    repo, num, labels, remove, base, i = None, None, [], [], None, 0
     while i < len(rest):
         a = rest[i]
-        if a in ("-R", "--repo") and i + 1 < len(rest):
-            repo = rest[i + 1]; i += 2; continue
+        nxt = rest[i + 1] if i + 1 < len(rest) else ""
+        if a in ("-R", "--repo"):
+            repo = nxt; i += 2; continue
+        if a in ("-l", "--label", "--add-label"):
+            labels += nxt.split(","); i += 2; continue
+        if a.startswith("--label=") or a.startswith("--add-label="):
+            labels += a.split("=", 1)[1].split(","); i += 1; continue
+        if a == "--remove-label":
+            remove += nxt.split(","); i += 2; continue
+        if a.startswith("--remove-label="):
+            remove += a.split("=", 1)[1].split(","); i += 1; continue
+        if a in ("-B", "--base"):
+            base = nxt; i += 2; continue
+        if a.startswith("--base="):
+            base = a.split("=", 1)[1]; i += 1; continue
         if not a.startswith("-") and num is None:
             num = a
         i += 1
+    return repo, num, labels, remove, base
+
+
+def _is_back_repo(repo, target):
+    if repo:
+        return repo.endswith("apprecio-pulse")
+    return "apprecio-pulse" in (git_out(["config", "--get", "remote.origin.url"], target) or "")
+
+
+def gh_rule(args, target):
+    """Reglas de `gh pr create|edit|merge` (labels del preview y merge validado)."""
+    if len(args) < 2 or args[0] != "pr":
+        return None
+    sub, rest = args[1], args[2:]
+    repo, num, labels, remove, base = _gh_opts(rest)
+    if sub == "create" and base == "main" and _is_back_repo(repo, target):
+        missing = [l for l in REQUIRED_PREVIEW_LABELS if l not in labels]
+        if missing:
+            return ("deny", f"PR hacia main sin {', '.join(missing)}: el preview necesita los 3 labels JUNTOS "
+                            f"(deploy:staging corre backend-tests; sin él se omiten errores). Usá "
+                            f"`bash ~/.config/worktrunk/scripts/beat-promote.sh --title … --body …`.")
+    if sub == "edit" and any(l in ("deploy:preview", "deploy:staging") for l in remove):
+        return ("deny", "Quitar deploy:preview/deploy:staging de un PR abierto DESTRUYE el preview o saltea los tests. Si de verdad hace falta, lo hace César con `!`.")
+    if sub != "merge":
+        return None
     if "--squash" in rest or "-s" in rest:
         return ("deny", "`gh pr merge --squash`: los subPR → trunk se mergean con `--merge` (regla de César, 08-sep); trunk → main lo mergea Hakeem.")
-    cmd = ["gh", "pr", "view"] + ([num] if num else []) + (["-R", repo] if repo else []) + ["--json", "baseRefName", "-q", ".baseRefName"]
+    view = ["gh", "pr", "view"] + ([num] if num else []) + (["-R", repo] if repo else []) + ["--json", "baseRefName", "-q", ".baseRefName"]
     try:
-        base = subprocess.run(cmd, cwd=target, capture_output=True, text=True, timeout=6).stdout.strip()
+        base_ref = subprocess.run(view, cwd=target, capture_output=True, text=True, timeout=6).stdout.strip()
     except Exception:
-        base = ""
-    if base == "main":
+        base_ref = ""
+    if base_ref == "main":
         return ("deny", "`gh pr merge` hacia main: el merge y deploy a main lo hace Hakeem, nunca una sesión.")
+    checks = ["gh", "pr", "checks"] + ([num] if num else []) + (["-R", repo] if repo else [])
+    try:
+        rc = subprocess.run(checks, cwd=target, capture_output=True, text=True, timeout=8).returncode
+    except Exception:
+        rc = 0  # sin red: no bloquear por no poder verificar
+    if rc == 8:
+        return ("deny", "CI todavía corre en ese PR: el merge al trunk se hace con todos los checks en verde y tras `/adlc-pre-merge` sin bloqueantes.")
+    if rc not in (0, 8):
+        return ("deny", "Hay checks en ROJO en ese PR: no se mergea al trunk. Revisá `gh pr checks`, corregí y re-corré `/adlc-pre-merge`.")
     return None
-
 
 def classify(sub, args):
     """Devuelve (tipo, nivel_en_worktree) si la operación escribe árbol/index/stash; si no, None.
@@ -215,7 +265,7 @@ def inspect(command, cwd):
                 worst = hit
             continue
         if tool == "gh":
-            hit = gh_merge_rule(seg[1:], cur)
+            hit = gh_rule(seg[1:], cur)
             if hit:
                 worst = hit
             continue
@@ -246,7 +296,7 @@ def inspect(command, cwd):
             switching = (sub == "switch" and any(not a.startswith("-") for a in sargs)) or \
                         (sub == "checkout" and "--" not in sargs and any(not a.startswith("-") for a in sargs))
             if switching and dirty_tracked(target):
-                worst = ("deny", f"Cambio de rama en `{target}` con cambios trackeados sin commitear: el WIP viajaría a la otra rama. Commiteá o terminá antes; implementadores en paralelo van en worktrees distintos (`wt switch -c <sub> --base <trunk>`).")
+                worst = ("deny", f"Cambio de rama en `{target}` con cambios trackeados sin commitear: el WIP viajaría a la otra rama. Commiteá antes de cambiar: los subPRs se trabajan de a uno en este worktree (dos implementadores en paralelo sobre el mismo árbol mezclan el trabajo, RYR-298).")
                 continue
         hit = classify(sub, sargs)
         if not hit:
