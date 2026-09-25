@@ -35,7 +35,7 @@ argument-hint: <ID de Linear> [--observe]
 
 | Pregunta | Opciones | Efecto |
 |---|---|---|
-| ¿Tipo? | feature/mejora de producto · issue chico o fix de motor/DB/plataforma | Solicitud con Plantilla **A-F** (CR @hakeem + QA @nicole) o **A-W** (QA worker de @ignacio, cc @hakeem). Si el issue o el padre fijó otro reparto, gana el precedente |
+| ¿Tipo? | feature/mejora de producto · issue chico o fix de motor/DB/plataforma | **A-F**: CR @hakeem + QA @nicole, **sin escalera QA** (la calidad sale de cada subPR y del QA de Nicole). **A-W**: QA worker de @ignacio, cc @hakeem, **con escalera QA** local + preview (es la misma revisión que hará el worker). Si el issue o el padre fijó otro reparto, gana el precedente |
 | ¿Forma? | trunk con subPRs · PR único | Con trunk: la rama de esta sesión ES el trunk y los subPRs salen de ella. PR único: §4 corre una vez sobre esta rama con la spec maestra (sin sub-spec) |
 
 ## 3. Plan — Stage 1 (interactivo, termina con el OK de César)
@@ -44,7 +44,7 @@ argument-hint: <ID de Linear> [--observe]
 2. En el mismo plan: **lista de subPRs** (uno por concern, orden y dependencias) con la **matriz criterio → subPR → test**. Hallazgos preexistentes: tabla para Ignacio, no subPRs extra.
 3. `/grill` sobre el plan.
 4. Con el OK: `/bitacora` (crear o adoptar) + push del trunk en back y app. Devolvele a César esta línea para que la mande como mensaje propio:
-   `/goal <ID>: preview del PR trunk→main sirviendo el HEAD (beat-promote --check sin ✗), escalera QA sobre el preview sin C0/C1 del PR, y borrador de la solicitud guardado en el vault — o detenido esperando una decisión o confirmación explícita de César.`
+   `/goal <ID>: preview del PR trunk→main sirviendo el HEAD (beat-promote --check sin ✗) y smoke OK, [solo A-W: escalera QA sobre el preview sin C0/C1 del PR], y borrador de la solicitud guardado en el vault — o detenido esperando una decisión o confirmación explícita de César.` (quitá el corchete de A-W si el issue es A-F).
 
 ## 4. SubPRs — Stages 2 y 3 (dentro de esta sesión y este worktree, de a uno)
 
@@ -62,12 +62,26 @@ Por cada subPR N, en secuencia:
 ## 5. Promoción y QA sobre el preview (Fase 2 del `CLAUDE.local.md`, en orden)
 
 1. Sync con main (`--release-config` → merge → `--refresh-config`).
-2. Build + tests locales (unit, service, e2e del módulo). **Escalera QA LOCAL** `/adlc-qa-ladder` (pre-vuelo: peldaños 0-6, 8, 9; el 7 queda PARCIAL por falta de preview; el 8 es `/pr-review`).
+2. Build + tests locales (unit, service, e2e del módulo). **Solo A-W:** escalera QA LOCAL `/adlc-qa-ladder` (pre-vuelo: peldaños 0-6, 8, 9; el 7 queda PARCIAL por falta de preview), con la preparación de §5bis. **A-F:** sin escalera.
 3. Body del PR de promoción: `## Promotion PR` (el gate entra en modo `multi`: los checks por spec ya se validaron en cada subPR) + `Spec:` de la maestra + lista de subPRs mergeados. `beat-promote.sh --title … --body … [--app-body …] --dry-run` → sin ✗ → sin `--dry-run` (crea el PR con los 3 labels juntos).
-4. Esperar con Monitor → `beat-promote.sh --check <PR>` sin ✗ → smoke (flag, usuario demo, UI visible, resultado en BD con `preview_db.py`).
-5. **Escalera QA sobre el PREVIEW** `/adlc-qa-ladder <PR> --issue <ID>` (Convergence Mode: revalida 7, 4 y 3; el peldaño 7 corre el flujo real contra el preview y lo verifica en su BD). Veredicto contra el ISSUE. **Bloqueante** para el borrador; C0/C1 → subPR de fix (§4) → redeploy → escalera otra vez.
+4. Esperar con Monitor → `beat-promote.sh --check <PR>` sin ✗ → smoke (flag, usuario demo, UI visible, resultado en BD con `preview_db.py`) → `/pr-review <PR>` del PR de promoción **una sola vez** sobre el HEAD actual (la escalera A-W lo reutiliza; solo se repite si hay commits nuevos).
+5. **Solo A-W — escalera QA sobre el PREVIEW** `/adlc-qa-ladder <PR> --issue <ID>` con la preparación de §5bis (Convergence Mode: revalida 7, 4 y 3; el peldaño 7 corre el flujo real contra el preview y lo verifica en su BD). Veredicto contra el ISSUE. **Bloqueante** para el borrador; C0/C1 → fix (§4) → redeploy → escalera otra vez. **A-F:** no hay escalera; el preview queda validado por `beat-promote --check` sin ✗ + el smoke del paso 4, y va directo a Nicole y Hakeem.
 6. **Evidencia final al PR** (Stage 2 §Evidence storage): capturas y resultados como **comentarios del PR** (imagen subida a GitHub) o gist secreto sin datos de tenant; nunca commitear binarios. `.beat/evidence/` es solo el borrador local.
 7. HEAD revisado == HEAD actual → borrador con `/voz` y la plantilla de §2, guardado en `~/Code/_vault/_work/apprecio/projects/rr/issues/<ID>/publicar-YYYY-MM-DD.md` con frontmatter `status: borrador`. NO lo publicás. Cuando César confirme que lo publicó, cambiá a `status: publicado`.
+
+### 5bis. Preparación de la escalera QA (solo A-W)
+
+El comando `/adlc-qa-ladder` pide un ambiente que prepara `scripts/qa-start.sh` según `PROMPTS-QA.md`; ninguno existe en el repo (son del worker de Ignacio) y su peldaño 8 cita `../pr-review-skills`, que tampoco existe. Antes de invocarla, dejá listo esto y pasáselo como contexto:
+
+| Lo que exige la escalera | Con qué se cumple |
+|---|---|
+| Preview sirviendo el código de ESTE PR | `beat-promote.sh --check <PR>` sin ✗ (merge commit contiene el HEAD, app emparejada) |
+| Acceso a la BD del preview | `python3 ~/.claude/skills/preview-db/preview_db.py <PR> get/count` (lectura por REST, sin túnel). Sembrar datos o cambiar flags lo corre César con `!`, y la escalera lo declara en su informe |
+| Node fijado contra el de CI | CI y `.nvmrc` usan Node 22: `node -v` debe dar v22; si no, `fnm use` |
+| Carpeta de evidencia fuera de todo repo | `~/.cache/qa-ladder/<ID>/<YYYY-MM-DD>/` (ni `.beat/`, que está dentro del worktree, ni el vault) |
+| Peldaño 8 (review externo) | **Reutilizá** el `/pr-review` del PR de promoción si su HEAD revisado == HEAD actual (está en el `sha:` del reporte); solo si hubo commits nuevos, corré `/pr-review <PR>` una vez. Nunca dos corridas sobre el mismo HEAD |
+| Corrida local (pre-vuelo) | BD del slot con `source .beat/q.sh`; peldaño 7 = PARCIAL (ambiente local) |
+| Informe "publicado como artifact" | `~/Code/_vault/_work/apprecio/projects/rr/issues/<ID>/qa-ladder-<YYYY-MM-DD>.md` (`type: review`, `split: una corrida por fecha`) + enlace en la bitácora |
 
 ## 6. Carga de la sesión
 
@@ -85,4 +99,4 @@ César lo corre cuando Hakeem avisa que el trunk llegó a producción.
 
 ## Entregable
 
-Fases 3-5: tabla de subPRs (sub-spec · PR · SHA · QA manual · evidencia confirmada · estado), veredicto de la escalera local vs preview, URLs del preview, ruta del borrador y huecos declarados. Fase 7: estado de la Compuerta, paquete de datos y la decisión exportada. Cierre: `mem_session_summary(content=…)`.
+Fases 3-5: tabla de subPRs (sub-spec · PR · SHA · QA manual · evidencia confirmada · estado), veredicto de la escalera local vs preview (solo A-W), URLs del preview, ruta del borrador y huecos declarados. Fase 7: estado de la Compuerta, paquete de datos y la decisión exportada. Cierre: `mem_session_summary(content=…)`.
