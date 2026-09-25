@@ -269,8 +269,8 @@ write_claude_local() {
 1. `/adlc-start` ANTES de tocar código: spec en `docs/specs/*.md` (scope IN/OUT/DEFER, subPRs, decisiones de producto en tabla). Sin OK de César del plan, no se codea.
 2. **No PR sin spec**: el spec existe Y el body del PR lo cita (`Spec: docs/specs/...md`) ANTES de abrirlo; si no, el gate de CI queda rojo PERMANENTE ("Missing spec file path"). `## Ownership` en prosa: `Build: César Moreno`.
 3. Build de cada subPR: `/adlc-build-loop <spec> --trunk <trunk>` (13 pasos; el 12 = `/pr-review`, no existe `../pr-review-skills`). En el paso 4 (`/adlc-qa-cases`) barré además `~/Code/_vault/_work/apprecio/_shared/qa-dimensiones.md` (escapes reales de Beat: hermanos de clase, invariante relajado, input multi-paso, roundtrip). Tests nuevos se siembran: rojos contra la base, verdes con el fix (commiteá antes de `git checkout <base> -- <archivos>`).
-4. **SubPRs = un worktree propio**: desde la base, `wt switch -c <rama-subpr> --base <trunk>` (crea back+app del trunk, slot propio). Implementadores en paralelo SOLO en worktrees distintos. Tras el merge: `wt remove <rama-subpr>` (libera el slot).
-5. Merge subPR → trunk: `gh pr merge <N> -R ivaldovinos-app/apprecio-pulse --merge` (NUNCA `--squash`; trunk → main lo mergea Hakeem). Solo con gate PASS/WARN, CI verde (leer JUnit), `/pr-review` READY TO MERGE y OK de César.
+4. **SubPRs = ramas DENTRO de esta sesión y este worktree** (el del trunk, creado con `wt switch -c`): de a uno, en secuencia. `git switch <trunk> && git pull --ff-only` → `git switch -c <trunk>-pr<N>` (en back y, si aplica, en la app con `git -C <pair>`). Todo commiteado antes de cambiar de rama (el guard lo exige). Implementadores en paralelo NO: comparten árbol.
+5. **Merge subPR → trunk lo valida ADLC**: `/adlc-pre-merge <PR>` sin bloqueantes (re-corre gate y runtime si hubo commits después de validar) + CI verde (el hook lo exige) + `/pr-review` READY TO MERGE + OK de César → `gh pr merge <N> -R ivaldovinos-app/apprecio-pulse --merge` (NUNCA `--squash`; trunk → main lo mergea Hakeem). Después: `git switch <trunk> && git pull --ff-only` en back y app.
 6. Gate local IGUAL a CI, con todo commiteado: `bash ~/.config/worktrunk/scripts/beat-gate.sh --body <archivo>` (antes del PR) o `--pr <N>`.
 
 **Fase 2 — Preparar para QA** (desde este worktree del back; en orden, nada se salta)
@@ -279,13 +279,13 @@ write_claude_local() {
 3. **Build + tests locales** (salida literal, no "pasó"):
    - `npm run build` en back Y app (tsc/vitest no ven errores de build; `pr-check` solo corre en PRs a main).
    - unit: `bash scripts/run-unit-tests.sh`
-   - service: `bash scripts/test-supabase-stop.sh && bash scripts/run-service-tests.sh` (stack RECIÉN arrancado; es global :44321 → si otra sesión lo usa, esperá; nunca `docker stop`, nunca reset en caliente).
+   - service: `bash ~/.config/worktrunk/scripts/beat-service-tests.sh` (stack RECIÉN arrancado y con candado: el stack de test :44321 es global; si otra sesión lo tiene, avisa quién — `--wait` para esperar. Nunca `docker stop`, nunca reset en caliente).
    - e2e del módulo: `USE_DEV_SUPABASE=1 bash scripts/run-e2e.sh -- tests/e2e/<carpeta>/` (sin la variable no corre contra este stack).
    - fallos preexistentes: A/B contra la base del trunk (revertí y re-corré) antes de declararlos ajenos.
 4. **Escalera QA LOCAL** (pre-flight): `/adlc-qa-ladder` peldaños 0-6, 8, 9; el 7 contra el stack local queda PARCIAL. Peldaño 8 = `/pr-review`. Es read-only: lo que encuentre → subPR de fix.
 5. **Preview** (solo existe para PRs con base `main`, `preview-deploy.yml:6`):
    - Vehículo: PR trunk → main (back) + PR homónimo en `ryr-39255` (el preview empareja la app por NOMBRE de rama). Para validar un subPR antes del trunk: rama `preview/<slug>` = trunk + fix + `merge origin/main`, PR "SOLO PREVIEW" a main, y se cierra al rescatar la evidencia.
-   - Labels: `deploy:staging` + `deploy:preview`. `skip:e2e` SOLO con una línea de justificación en el body (el repo lo prohíbe en cambios de aplicación, `docs/PREVIEW_ENVIRONMENTS.md:11`).
+   - **Los 3 labels, SIEMPRE y juntos**: `deploy:staging` (corre backend-tests: sin él se omiten errores, RYR-287) + `deploy:preview` + `skip:e2e` (por capacidad, temporal). Usá `bash ~/.config/worktrunk/scripts/beat-promote.sh` (crea el PR con los 3 en un solo comando; ponerlos de a uno cancela runs). Nunca quitar `deploy:preview` de un PR abierto: el workflow DESTRUYE el preview.
    - Esperar sin `sleep`: Monitor con `until ! gh pr checks <N> -R ivaldovinos-app/apprecio-pulse 2>&1 | grep -qE 'pending|in_progress'; do sleep 30; done` (un solo vigilante por PR).
    - Verificar que sirve TU código: el log no dice "App branch ... not found — using 'main'"; `python3 ~/.claude/skills/preview-db/preview_db.py list` (tag → revisión) = HEAD. Si falla gcloud → César corre `! gcloud auth login`. Tras un redeploy, re-login (el JWT viejo se invalida).
    - Smoke: flag activo, usuario demo válido, UI usable (chrome-devtools; capturas en `.beat/evidence/`), resultado confirmado en BD con `preview_db.py <PR> get/count`. Escribir en el preview (`--confirm`) lo corre César con `!`.

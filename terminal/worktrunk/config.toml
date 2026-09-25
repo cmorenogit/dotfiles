@@ -41,6 +41,9 @@ grep -qxF "CLAUDE.local.md" "$common_dir/info/exclude" 2>/dev/null || echo "CLAU
 # tiene cambios sin commitear lo deja y lo marca ✗). Reporte visual espejo de beat-prep.
 # Nunca aborta (sale 0) → el back se elimina igual.
 pre-remove.unpair-beat = 'bash "$HOME/.config/worktrunk/scripts/beat-unpair.sh" "{{ branch }}"'
+# post-remove: Supacode sigue listando el worktree borrado hasta que refresca el repo (verificado
+# 25-sep-2026); `repo open` de las dos bases lo limpia. No-op fuera de Supacode.
+post-remove.supacode-refresh = 'command -v supacode >/dev/null && [ -n "${SUPACODE_SOCKET_PATH:-}" ] && { supacode repo open "$HOME/Code/work/rr-project/back-pulse-cesar"; supacode repo open "$HOME/Code/work/rr-project/app-rr-cesar"; } >/dev/null 2>&1 || true'
 # pre-switch (BLOQUEANTE, corre en el origen ANTES de crear): verifica que las bases back+app
 # estén limpias y al día. Base sucia → aborta (incidente 15/16-sep-2026: base con 746 archivos
 # del padre staged). target_worktree_path vacío = creación; con valor = switch a uno existente (no-op).
