@@ -65,6 +65,14 @@ Ante cualquier decisión técnica, evaluar en este orden:
 - Antes de refactorizar, confirmar que el código actual funciona.
 - No asumir que un error reportado es el único problema.
 
+## Ejecución en agentes (errores medidos en 212 sesiones, sep-2026)
+- **Afirmar = medir**: todo número, "todos/ninguno" o estado de otra rama/hilo sale de un comando corrido AHORA y citado (repo · HEAD · N). Una cifra de un doc o de memoria se cita con fuente y fecha, o se re-mide. Antes de afirmar el estado de un hilo o PR ajeno: re-fetch.
+- **Shell**: `sed` y `date` de `~/bin` son GNU (`sed -i` sin `''`, `date -d`). No hay `psql` en el host: `docker exec`. Rutas absolutas; `gh` siempre con `-R <owner/repo>`. Logs con nombre único por corrida (no reusar `/tmp/x.log`).
+- **Esperas**: nunca `sleep` ni `--watch` en primer plano; usar ejecución en background o un monitor con until-loop, y un solo vigilante por proceso.
+- **Subagentes**: el informe completo va a un archivo (`/tmp/<issue>-<rol>-<n>.md` o `.beat/` del worktree); el mensaje final lleva ≤25 líneas: veredicto, bloqueantes con `archivo:línea`, lo no hecho y la ruta. Implementadores en paralelo solo en worktrees distintos.
+- **Publicar** (Linear, Chat, GitHub): se muestra el texto FINAL verbatim y se espera OK; 1 OK = 1 publicación (una edición posterior vuelve a requerir OK). Crear un issue solo si César lo pide explícitamente.
+- **Tools MCP**: cargar el schema (ToolSearch `select:`) antes del primer uso; no inventar parámetros.
+
 ## Restricciones
 - No generar código placeholder (`// TODO: implement`) — implementar completo o preguntar.
 - No modificar archivos de configuración del proyecto (env, dependencies, build) sin confirmación.
@@ -178,7 +186,7 @@ Detalle (templates Issue Linear/PR/Hilo/Mensaje, reglas de formato): `~/Code/_va
 
 Una sesión no termina hasta que `git push` sea exitoso. Workflow obligatorio:
 
-1. Crear issues para trabajo de seguimiento
+1. Proponer (no crear) issues para el trabajo de seguimiento: se crean solo con OK explícito de César
 2. Correr quality gates si hubo cambios de código (tests, linters, build)
 3. Actualizar estado de issues (cerrar terminados, actualizar en progreso)
 4. **Push obligatorio:**
@@ -198,6 +206,8 @@ Si el push falla, resolver y reintentar — no dejarlo a medias.
 # Linear (aplica si MCP disponible)
 
 - **Linear** — sistema oficial Apprecio para issue tracking. Workspace: `https://linear.app/apprecio-producto`. Dividido en 4 teams: `RYR` (Beat), `App` (mobile), `Platform` (Fuerza / SL / Engagement; infra / core / soporte), `Product Planning` (discovery, shaping). Es el canal principal de comunicación laboral en línea — cada comentario es comunicación, no solo metadata.
+
+Parámetros reales del MCP (fallaron varias veces por inventarlos): `save_issue` usa `id` (solo al actualizar), `team`, `title`, `assignee`, `state` (por nombre, p. ej. "In Review") y `parentId`; nunca `teamId`/`assigneeId`/`stateId`/`status`. `save_comment` usa `body` + `issueId`, o `parentId` para responder en un hilo existente. `get_issue` usa `id`. `list_comments` usa `issueId` (no hay filtro por fecha: se filtra el resultado).
 
 Para IDs específicos (teams, states, labels) y referencia de tools: `~/Code/_vault/_work/apprecio/_shared/linear-config.md`. Alternativa: usar tools nativos del MCP de Linear (`list_teams`, `list_issue_statuses`, `list_issue_labels`, etc.) para datos frescos.
 

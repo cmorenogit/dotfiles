@@ -32,7 +32,7 @@ Engram provee memoria persistente cross-session via skill `engram:memory` (alway
 - Primer mensaje del usuario referenciando proyecto/feature/problema → buscar con keywords antes de responder
 
 ### Cierre de sesión (obligatorio antes de decir "listo")
-Llamar `mem_session_summary` con: Goal, Discoveries, Accomplished, Next Steps, Relevant Files.
+Llamar `mem_session_summary` con un ÚNICO campo de texto `content` (más `project`), que es markdown con las secciones `## Goal`, `## Discoveries`, `## Accomplished`, `## Next Steps` y `## Relevant Files`. No existen parámetros `summary`/`goal`/`input`: pasarlos da "content is required" (falló en ~20 cierres de sesión, sep-2026). `mem_save` también exige `content` (más `title`, `type`, `project`).
 
 ### Conflict surfacing
 Después de cada `mem_save`, revisar la respuesta. Si `judgment_required` es true:
