@@ -1,7 +1,6 @@
 ---
 name: grill
-description: Stress-test de un plan o diseño antes de construir — interrogatorio socrático, una pregunta a la vez, cada una con tu recomendación. Solo se invoca a mano (/grill).
-disable-model-invocation: true
+description: Stress-test de un plan o diseño antes de construir — interrogatorio socrático, una pregunta a la vez, cada una con tu recomendación. Lo invoca César (/grill) o el agente en la fase de plan de un issue (antes del OK del plan); nunca desde un subagente, porque necesita a César para responder.
 ---
 
 # grill — interrogá el plan hasta que cierre

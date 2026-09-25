@@ -442,7 +442,18 @@ Tickets de deuda a crear (DEPTH/SCOPE_EXPANSION/CARRY-OVER sin defensa):
 - <tag de origen | archivo | breve descripción>
 ```
 
-**Save report as .md file** in the vault, organized by project and repository (NOT in the repo cwd, NOT in the vault root `reviews/` — retired path):
+**Save report as .md file** in the vault, organized by project and repository (NOT in the repo cwd, NOT in the vault root `reviews/` — retired path). Frontmatter obligatorio (el vault-write-guard rechaza otros `type`, 5 rechazos en sep-2026):
+```yaml
+---
+type: review
+project: rr
+split: un reporte por PR (veredictos independientes)
+issue: <ISSUE-ID si hay>
+pr: <prNumber>
+sha: <HEAD revisado>
+---
+```
+If a report for the same PR already exists, update it (new iteration section) instead of creating another file.
 ```bash
 Write file: ~/Code/_vault/_work/apprecio/projects/{project}/reviews/{repo}/pr{prNumber}-review-report.md
 # project from repo: apprecio-pulse / ryr-39255 → rr. If the review belongs to a
@@ -450,6 +461,12 @@ Write file: ~/Code/_vault/_work/apprecio/projects/{project}/reviews/{repo}/pr{pr
 ```
 
 ---
+
+## Running as a subagent / teammate
+
+- Write the FULL report to the vault path above and end with a message of **≤25 lines**: verdict, MUST FIX list with `file:line`, what was not reviewed, and the report path. Long inline reports get truncated (11 cases in sep-2026 where the lead had to ask again).
+- Launch the Pass 1/Pass 2 subagents **without** a `name` parameter (teammates cannot spawn named teammates).
+- Record the reviewed HEAD SHA in the report: a later request for QA/CR must check that HEAD == reviewed SHA, or review the delta first.
 
 ## Language Rules
 

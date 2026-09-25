@@ -3,15 +3,15 @@ name: preview-db
 description: >
   Acceso de lectura/escritura a la BD de un preview de Beat (por PR o issue) vía la API REST del
   preview con el service_role — leer tablas, contar filas y, con confirmación, escribir filas o
-  activar/desactivar feature flags. Solo previews (nunca producción). User-invoked: la llamás vos.
-disable-model-invocation: true
+  activar/desactivar feature flags. Solo previews (nunca producción). El agente puede leer (list/tables/get/count);
+  las escrituras con --confirm las bloquea git-base-guard y las corre César con `!`.
 ---
 
 # preview-db — datos de un preview de Beat
 
 Accede a la BD de **el preview de un PR** de Beat (backoffice `apprecio-pulse`) por su **API REST** con el `service_role`. No pasa por Cloud SQL — usa lo que ya es legible en la config del Cloud Run del preview (`gcloud run …describe`). Solo **previews** (efímeros, aislados); **nunca producción**.
 
-**Motor:** `preview_db.py` (stdlib, sin dependencias), en el base dir de esta skill. Requiere `gcloud` logueado.
+**Motor:** `preview_db.py` (stdlib, sin dependencias), en el base dir de esta skill. Requiere `gcloud` logueado: si `gcloud auth print-access-token` falla, pedile a César `! gcloud auth login` (no se puede hacer desde el agente).
 
 ## Guardas (siempre)
 

@@ -55,6 +55,7 @@ qué es señal y qué es ruido.
    OUT="/tmp/handoff-${SLUG}-${FECHA}.md"
    ```
    Path final: `/tmp/handoff-<slug>-<YYYY-MM-DD>.md`. La fecha sale de `date +%F` del sistema, no inferida.
+   **Copia persistente**: además, `cp` a `~/.cache/handoffs/` (`mkdir -p` antes). `/tmp` se borra al reiniciar y en sep-2026 se perdieron handoffs y `.env` de preview entre sesiones. Si el trabajo es de un issue con bitácora, el próximo paso va TAMBIÉN en su "Estado actual" (regla de la bitácora).
 5. **Cerrar.** Devolvé a César (a) el path del archivo y (b) el one-liner para arrancar la sesión nueva:
    > Abrí una sesión nueva y pegá: «Leé `/tmp/handoff-<...>.md` y continuá con <foco>».
 
