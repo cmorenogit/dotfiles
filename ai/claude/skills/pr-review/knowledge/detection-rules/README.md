@@ -26,6 +26,7 @@ Si el trigger no matchea, la regla NO se carga (ahorra tokens del subagente).
 |-------|---------|--------------------|---------------|
 | **Economic grants — otorgamiento de puntos económicos** | [`economic-grants.md`](./economic-grants.md) | Archivos que tocan `point_transactions`, `wallet_ledger`, `grant_economic`, `grant_recognition`, `grant_xp`, `grant_mission_economic`, o cualquier edge function `*-grant*` / `*economic*` | G2 (Auth+IDOR+Manager) + CCC (cross-cutting) |
 | **Migration timestamps — colisiones y orden** | [`migration-timestamps.md`](./migration-timestamps.md) | PR añade archivos en `supabase/migrations/*.sql` con prefix `YYYYMMDDHHMMSS_` | G3 (SQL+RLS+Cron) + CCC |
+| **Test clock stubs — el test fija lo que el producto resuelve** | [`test-clock-stubs.md`](./test-clock-stubs.md) | PR toca archivos bajo `__tests__/` que contienen un literal con forma de offset (`±HH:MM`), una variable de entorno de zona horaria (`*_TZ*`, `Intl…timeZone`), o un desplazamiento de 1–14 horas (`N * 3_600_000`) sobre una fecha que se serializa con hora | `pr-review-tests` (Step 3) |
 
 ## Convenciones para añadir una regla nueva
 

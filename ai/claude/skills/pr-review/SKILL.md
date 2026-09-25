@@ -44,6 +44,7 @@ gh pr view {prNumber} -R {repo} --json title,additions,deletions,changedFiles,he
    Currently shipped domain rules (verify against `README.md` for the live list):
    - **economic-grants** — triggers on `point_transactions`, `wallet_ledger`, `grant_*` RPCs, `economic-grant` / `*-grant*` / `reward-redemption` / `gift-card-*` / `wallet-funding-*` edge functions. Consumed by G2 and CCC.
    - **migration-timestamps** — triggers when the PR adds files under `supabase/migrations/*.sql` with `YYYYMMDDHHMMSS_` prefix. Detects intra-PR collisions, inter-branch collisions against `main`, out-of-order timestamps (< max in main), and future timestamps (> today + 30d). Consumed by G3 and CCC.
+   - **test-clock-stubs** — triggers when the PR touches files under `__tests__/` containing an offset-shaped literal (`±HH:MM`), a timezone env var identifier (`*_TZ*`, `Deno.env.get('…TZ…')`, `Intl.DateTimeFormat(… timeZone …)`), or a 1–14 hour shift (`N * 3_600_000`) in a file that formats the hour (`getUTCHours`, `AM/PM`) — days excluded. Detects test stubs that hardcode a value the product **resolves** (timezone offset, and by extension currency/locale/flag). Consumed by **`pr-review-tests` only** (see Step 3): CCC is explicitly excluded, since it does not flag test files for production-level concerns.
 
 3. Get full file list (paginated, up to 300 files):
 ```bash
@@ -213,6 +214,8 @@ If applicable, invoke the `/pr-review-tests` skill logic:
 
 **Context from Pass 1+2:** Pass the findings summary so test review doesn't duplicate validation findings.
 
+**Domain rule — test-clock-stubs (load conditionally per Step 2.6):** if any test file in the PR matches the rule's trigger, load `knowledge/detection-rules/test-clock-stubs.md` and inject it into this agent's prompt. This is the rule's only consumer — test files are in Step 0's Skip patterns, so G1–G5 never see them. Core question: does the stub hardcode a value the product **resolves** at runtime (timezone offset, currency, locale) and then assert against the product's own resolution? If yes and a resolver is exported → MUST FIX, and name the exact symbol to reuse. Key anti-FP: a literal passed **as an argument** to the function under test (`parseReportFecha(fecha, '-04:00')`) and the resolver's own unit test (`assertEquals(resolveReportTzOffset('CL', enero), '-03:00')`) are both valid — there the literal is the contract, not an assumption about the world.
+
 #### Step 3.1: CI Execution Verification (CRITICAL — always run when PR has test files)
 
 **Why:** Test files that exist but are never executed by CI provide zero value and create a false sense of coverage. This check verifies that every test file in the PR is actually picked up by the CI pipeline's glob patterns.
@@ -302,12 +305,86 @@ If applicable, invoke the `/pr-review-audit` skill logic:
 
 ---
 
+### Step 5.6: Financial Risk Audit — RESERVADO
+
+**No reutilizar este número.** `pr-review-finrisk` se declara a sí mismo como "invocado por `/pr-review` Step 5.6", y `detection-rules/financial-fraud-surface.md` lo referencia igual. El lente de evidencia ocupó 5.6 brevemente y colisionó con esa línea de trabajo: en `apprecio-pulse#891` corrió finrisk y el lente no, porque ambos reclamaban el mismo número. Cuando finrisk entre a este repo, este bloque se reemplaza por su definición.
+
+---
+
+### Step 5.7: Evidence Verification (conditional)
+
+**Condition:** the PR claims runtime, manual or UI validation of any kind — whether in a dedicated
+section of the body, in an evidence folder it links to, or in prose. The section heading and the
+folder path are a per-repo convention, so match on the claim, not on the name (in `apprecio-pulse`
+they happen to be `## Verificación Runtime` and `docs/evidencia/**`).
+
+**Why:** the gate validates that the evidence section *exists* (structure, not content). Passes 1
+and 2 review *code*. Nobody reviews whether the evidence **proves what it claims to prove** — and
+the author cannot: they know the intent, so they see in a screenshot what they meant to put there,
+not what a reader sees. This step is the only one that reads the evidence as an outsider.
+
+Not a style check. Every criterion below is answerable from the artifacts.
+
+**Criteria:**
+
+1. **Discriminating value.** For each claim, would the SAME test value produce the SAME result
+   *without* the change? If yes, the evidence proves nothing about the change.
+   Watch for values that look specific but collapse: `10.00` is `10`; a `step=1` that is `1` for
+   every currency; an empty list that "passes" because a regex stopped matching.
+
+2. **Reaches the outcome.** Does the evidence end at the product effect (money moved, record
+   created, e-mail delivered, screen state) or does it stop at the boundary of the implementation
+   (`returns 400`, `test passes`)? A PR whose value is "the user cannot do X anymore" needs
+   evidence of X being blocked *and* of the legitimate path still working.
+   Do not confuse this with **your own** reach: "I could not run anything against a database" is a
+   limit of the review and belongs in *Superficie reviewada*, not here. This criterion is answered
+   by reading the artifact, not by reproducing it.
+
+3. **Artifacts were opened, not counted.** Does what the PR says match what the artifact contains?
+   A 7 KB `.txt` of test output gets counted-without-reading exactly like a screenshot does — this
+   is not a criterion about images.
+   - **Captures:** check the described path — the selected user, the chosen option, the currency,
+     the visible total. A wrong-but-plausible screenshot is worse than none.
+   - **Logs, dumps, transcripts:** check that the figures the PR quotes actually appear there, and
+     that the artifact's **own conclusion** matches the PR's. An artifact that investigated further
+     than the body and reached a different verdict is the highest-yield finding of this step — the
+     author did the work and the body went stale.
+
+4. **Contrast with one variable.** Before/after or A/B on the same screen with the same data. If
+   two things changed between captures, the evidence shows correlation, not cause.
+
+5. **Guards were injected, not observed.** For each new guard/test claimed as protection: is there
+   proof it goes red when the defect is present? "The suite passes" is not proof that it can fail.
+
+6. **Declared limits.** Does the PR state what the evidence does NOT cover? Absent limits are
+   usually undetected limits — and they are exactly what leaks to production.
+
+**Severity:** SHOULD FIX by default. Escalate to MUST FIX only when the evidence **contradicts** a
+claim in the PR body (screenshot shows a different flow than described, value proves a different
+property than stated). Weak-but-honest evidence is SHOULD FIX; evidence that misleads is MUST FIX.
+
+**Do NOT report:** absence of evidence the PR explicitly declared as out of scope with a reason;
+missing evidence for infrastructure with no observable surface; or "add more screenshots" without
+naming which claim is unsupported.
+
+**Output format:**
+```
+Evidence Check:
+- N claims in the PR body
+- X supported by evidence that discriminates ✅
+- Y supported by evidence that does not discriminate ⚠️
+- Z unsupported ❌
+[table: claim, artifact, criterion that fails, what would fix it]
+```
+
+---
+
 ### Step 6: FP Validation (precision self-check)
 
-Validate all agent analysis findings (Pass 1 + Pass 2) against the actual code to classify as TP/FP/NEEDS_REVIEW.
+Validate all agent analysis findings (Pass 1 + Pass 2) **and the evidence findings from Step 5.7** against the actual code and artifacts to classify as TP/FP/NEEDS_REVIEW.
 
 Launch 1 Agent (model: "haiku") with:
-- All findings from Pass 1 + Pass 2
+- All findings from Pass 1 + Pass 2 + Step 5.7
 - The FP heuristics below
 
 **FP Heuristics to apply per finding:**
@@ -320,19 +397,32 @@ Launch 1 Agent (model: "haiku") with:
 | I5 | "High complexity" on normal React hook / route handler pattern | FP |
 | I8 | Finding targets generated types file (`types.ts`, auto-generated) | FP |
 | BE | Backend API validation message in English (Zod in edge function, not `.tsx`) | FP |
+| EV1 | Evidence finding whose claim the PR **explicitly declared out of scope with a reason** | FP |
+| EV2 | Evidence finding that names no specific claim ("add more screenshots", "evidence is thin") | FP |
+| EV3 | Evidence finding on a PR with no observable surface (infra, docs, config only) | FP |
 
 **Agent prompt:**
 ```
 You are verifying {N} findings from PR #{prNumber} for false positives.
 
-For each finding:
+For each CODE finding (Pass 1 + Pass 2):
 1. Fetch the file via: gh api "repos/{repo}/contents/{file}?ref={branch}" --jq '.content' | base64 -d
 2. Locate the line referenced
 3. Apply each heuristic — if ANY matches, classify as FP with evidence
 4. If no heuristic matches and the issue is real, classify as TP
 5. If unclear, classify as NEEDS_REVIEW
 
-Output: table with columns: #, File, Severity, Classification (TP/FP/NR), Heuristic (if FP), Evidence (one line)
+For each EVIDENCE finding (Step 5.7) — these have no file:line, so verify them
+against the PR body and the artifacts instead:
+1. Re-read the claim in the PR body and the artifact it points to
+2. Apply heuristics EV1-EV3 — if ANY matches, classify as FP with evidence
+3. If no heuristic matches, confirm the criterion it cites actually fails
+   (e.g. for "value does not discriminate": state what the result would be
+   WITHOUT the change) — only then classify as TP
+4. If the artifact cannot be inspected from here, classify as NEEDS_REVIEW —
+   never TP on an artifact you did not open
+
+Output: table with columns: #, File (or claim, for evidence findings), Severity, Classification (TP/FP/NR), Heuristic (if FP), Evidence (one line)
 Summary: X TP, Y FP, Z NR. Precision: X/(X+Y)%.
 ```
 
@@ -398,23 +488,28 @@ Buenas prácticas (N):
 - Score: X/10
 - [tabla de clasificación]
 
-### 6. Validación de Precisión
+### 6. Verificación de Evidencia (si aplica)
+- Afirmaciones del PR body: N — con evidencia que discrimina: X · que no discrimina: Y · sin evidencia: Z
+[tabla: afirmación, artefacto, criterio que falla, qué lo arreglaría]
+- Si el PR no declara evidencia: "N/A — el PR no afirma validación runtime"
+
+### 7. Validación de Precisión
 - Findings validados: X TP, Y FP removidos, Z needs review
 - Precisión: X/(X+Y)%
 [tabla de FPs removidos si hay, con heurística aplicada]
 
-### 7. Quick Wins (hacer antes de merge)
+### 8. Quick Wins (hacer antes de merge)
 [tabla con #, acción, archivo, tiempo estimado, detalle]
 Tiempo total estimado: ~N minutos
 
-### 8. Superficie reviewada (Iteration Contract — Regla 3)
+### 9. Superficie reviewada (Iteration Contract — Regla 3)
 | Status | Archivos / áreas |
 |--------|-------------------|
 | ✅ Auditado | <archivos revisados a profundidad en esta iter> |
 | ⚠️ Spot-check | <archivos vistos en pasada superficial> |
 | ❌ No auditado | <archivos del PR que NO se revisaron> |
 
-### 9. Clasificación de origen (solo en iter N≥2)
+### 10. Clasificación de origen (solo en iter N≥2)
 Por cada finding nuevo en esta iter, etiqueta de origen + ¿bloquea?:
 
 | # | Finding | Tag | ¿En delta {prev_sha}..{curr_sha}? | ¿Bloquea? |
@@ -423,7 +518,7 @@ Por cada finding nuevo en esta iter, etiqueta de origen + ¿bloquea?:
 
 DEPTH y SCOPE_EXPANSION NO bloquean — van a tickets de deuda independientes.
 
-### 10. Estado de salida (Iteration Contract — Regla 5)
+### 11. Estado de salida (Iteration Contract — Regla 5)
 Estado: **READY TO MERGE** / **APPROVE WITH CONDITIONS** / **BLOCK**
 
 **Bar del trunk:** <P0/P1 | MUST-FIX-or-above | etc> (declarado por owner | default).
@@ -482,5 +577,5 @@ Write file: ~/Code/_vault/_work/apprecio/projects/{project}/reviews/{repo}/pr{pr
 - `--skip-agent` skips Steps 1-2 (both passes) — only manual review runs
 - `--skip-scope` skips Step 5
 - The full set of acceptable patterns (anti-FP rules) lives in `knowledge/acceptable-patterns.md` of this repo
-- **The Iteration Contract** — rules for when to approve, when to block, and how many iters are allowed — lives in `knowledge/iteration-contract.md`. **Apply it in every iter:** Step 0 detects previous iter and computes delta; Step 7 sections 8–10 enforce surface declaration, origin classification, and explicit exit state. DEPTH and SCOPE_EXPANSION findings NEVER block merge — they go to deuda tickets. Iter 3 is the hard stop before escalation to meeting.
+- **The Iteration Contract** — rules for when to approve, when to block, and how many iters are allowed — lives in `knowledge/iteration-contract.md`. **Apply it in every iter:** Step 0 detects previous iter and computes delta; Step 7 sections 9–11 enforce surface declaration, origin classification, and explicit exit state. DEPTH and SCOPE_EXPANSION findings NEVER block merge — they go to deuda tickets. Iter 3 is the hard stop before escalation to meeting.
 - **Domain detection-rules** — positive detection rules specific to product domain (e.g., economic grants governance, future rules for notifications/cron/shared-modules) live in `knowledge/detection-rules/`. Index in `knowledge/detection-rules/README.md`. Each rule declares its own **Trigger** (file patterns / symbols that activate it) and **Skills que la consumen** (which subagent should load it). Step 2.6 evaluates triggers against the PR and conditionally injects matched rules into subagent prompts. To add a new rule, follow the template in the README and update the rules table.
