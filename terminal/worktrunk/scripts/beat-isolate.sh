@@ -161,6 +161,24 @@ write_isolated_config() {
   git -C "$WT_DIR" update-index --skip-worktree supabase/config.toml 2>/dev/null || true
 }
 
+# Helpers del worktree en .beat/ (ignorado vía info/exclude). q.sh: psql del slot sin psql en el
+# host (sesiones: `psql: command not found`, `$PSQL` sin word-splitting en zsh, columnas adivinadas).
+write_beat_helpers() {
+  local dir="$1" pid="$2"
+  mkdir -p "$dir/.beat"
+  local exclude; exclude="$(git -C "$dir" rev-parse --git-common-dir)/info/exclude"
+  case "$exclude" in /*) ;; *) exclude="$dir/$exclude" ;; esac
+  grep -qxF ".beat/" "$exclude" 2>/dev/null || echo ".beat/" >> "$exclude"
+  cat > "$dir/.beat/q.sh" <<QEOF
+# Generado por beat-isolate.sh — psql contra el Supabase de ESTE slot ($pid). Uso:
+#   source .beat/q.sh ; Q "select count(*) from profiles" ; cols challenges ; psqlw -c '\\dt'
+BEAT_DB_CONTAINER="supabase_db_${pid}"
+psqlw() { docker exec -i "\$BEAT_DB_CONTAINER" psql -U postgres -d postgres "\$@"; }
+Q()     { psqlw -At -F \$'\\t' -c "\$1"; }
+cols()  { psqlw -c "\\d \$1"; }
+QEOF
+}
+
 # Setea las variables de puerto globales a partir de un slot.
 compute_ports() {
   local slot="$1"
@@ -207,100 +225,104 @@ write_claude_local() {
   local pair_line
   if [ -d "$pair_dir" ]; then pair_line="- Path: $pair_dir"
   else pair_line="- (pair aún no creado) — se crea solo al hacer \`wt switch --create $branch\` desde el back."; fi
-  # Fase 2 (QA-prep): detalle completo solo en el backoffice (los scripts y el PR viven en el
-  # back); en la app, un puntero al back (el flujo es back-driven, no se duplica).
+  # ID del issue derivado de la rama (ryr-286 / pla-29 / RYR_300) → puntero a su bitácora.
+  local issue
+  issue="$(printf '%s' "$branch" | grep -oiE '(ryr|pla|app)[-_]?[0-9]+' | head -1 | tr '[:lower:]_' '[:upper:]-' | sed -E 's/^([A-Z]+)-?([0-9]+)$/\1-\2/' || true)"
+  local bitacora_line="- Bitácora: la rama no trae ID de issue — si el trabajo es de un issue, ubicá su bitácora en \`~/Code/_vault/_work/apprecio/projects/rr/issues/<ID>/00-bitacora.md\`."
+  [ -n "$issue" ] && bitacora_line="- Issue: **$issue** · bitácora: \`~/Code/_vault/_work/apprecio/projects/rr/issues/$issue/00-bitacora.md\` — si existe, LEELA ANTES de todo (foto + decisiones vigentes)."
+
+  # Flujo: detalle completo solo en el backoffice (scripts, gate, PR y preview viven en el back);
+  # la app recibe un puntero (el flujo es back-driven, no se duplica). Heredoc con comillas: literal.
   local flujo_qa_block=""
   case "$role_label" in
-    *backoffice*) flujo_qa_block="
-**Fase 2 — Preparar para QA** (cuando el desarrollo está listo; desde este worktree del back)
-1. **Tests locales** (los 3; e2e SOLO el módulo):
-   - unit:    \`bash scripts/run-unit-tests.sh\`
-   - service: \`bash scripts/run-service-tests.sh\`  (levanta Docker :44321)
-   - e2e (SOLO el módulo): \`bash scripts/run-e2e.sh -- tests/e2e/<carpeta>/\`  (CI skipea e2e → local es la única red)
-   - parar el stack SIEMPRE con \`bash scripts/test-supabase-stop.sh\` (NUNCA \`docker stop\` → traba el CLI de Supabase)
-   - fallos ajenos/pre-existentes o flakes ambientales NO bloquean: confirmá con A/B (revertí tu cambio y re-corré) o corrida aislada (N≥10). Doc: \`_work/apprecio/projects/rr/testing/correr-tests-locales.md\`
-2. **Code review**: en una **sesión NUEVA** correr \`/pr-review #<PR>\`. El agente revisa y aplica fixes; **iterar** hasta READY TO MERGE (los CONSIDER no bloquean).
-3. **Ambiente QA**: agregar al PR los **3 labels juntos** — \`deploy:staging\` + \`deploy:preview\` + \`skip:e2e\`. Conviven: staging corre backend-tests y su Job 3 despliega el **preview** (subordinado); skip:e2e saltea e2e (ya corridos local). Agregarlos casi a la vez cancela runs intermedios (concurrency) → el último run es el válido.
-4. **Pipeline**: esperar backend-tests verdes → preview levantado → **gate ADLC OK**.
-5. **Probar en el preview** (URL del Job 3) y verificar el fix a ojo en el ambiente.
-6. **Borrador para Hakeem**: redactar el pedido (formato code-review) para que Hakeem revise y pase a QA. **Nunca mergear sin OK.**
-7. **Solicitudes formales en Linear** (los pedidos del paso 6, ya con plantilla). Las **URLs salen del comentario del PR** una vez que el preview quedó arriba y el pipeline en verde (Job 3). Regla de iteración:
-   - **Primer QA** (tras tu OK técnico — \`/pr-review\` en READY TO MERGE): se pide TODO junto → **Plantilla A**.
-   - **Iteraciones siguientes** (QA o code review devolvió hallazgos y los arreglaste): NO juntas. Primero **Plantilla B** (Code Review), esperá READY TO MERGE, y recién ahí **Plantilla C** (QA).
-   - **Cierre** (aprobaciones completas en ambos PRs): **Plantilla D**.
+    *backoffice*) flujo_qa_block="$(cat <<'FASE'
+**Fase 1 — Desarrollo (ADLC)**
+1. `/adlc-start` ANTES de tocar código: spec en `docs/specs/*.md` (scope IN/OUT/DEFER, subPRs, decisiones de producto en tabla). Sin OK de César del plan, no se codea.
+2. **No PR sin spec**: el spec existe Y el body del PR lo cita (`Spec: docs/specs/...md`) ANTES de abrirlo; si no, el gate de CI queda rojo PERMANENTE ("Missing spec file path"). `## Ownership` en prosa: `Build: César Moreno`.
+3. Build de cada subPR: `/adlc-build-loop <spec> --trunk <trunk>` (13 pasos; el 12 = `/pr-review`, no existe `../pr-review-skills`). Tests nuevos se siembran: rojos contra la base, verdes con el fix (commiteá antes de `git checkout <base> -- <archivos>`).
+4. **SubPRs = un worktree propio**: desde la base, `wt switch -c <rama-subpr> --base <trunk>` (crea back+app del trunk, slot propio). Implementadores en paralelo SOLO en worktrees distintos. Tras el merge: `wt remove <rama-subpr>` (libera el slot).
+5. Merge subPR → trunk: `gh pr merge <N> -R ivaldovinos-app/apprecio-pulse --merge` (NUNCA `--squash`; trunk → main lo mergea Hakeem). Solo con gate PASS/WARN, CI verde (leer JUnit), `/pr-review` READY TO MERGE y OK de César.
+6. Gate local IGUAL a CI, con todo commiteado: `bash ~/.config/worktrunk/scripts/beat-gate.sh --body <archivo>` (antes del PR) o `--pr <N>`.
+
+**Fase 2 — Preparar para QA** (desde este worktree del back; en orden, nada se salta)
+1. **Sincronizar**: `git fetch && git merge origin/main` en el trunk (y en el trunk de la app). Para no chocar con `supabase/config.toml`: `bash ~/.config/worktrunk/scripts/beat-isolate.sh --release-config` → merge → `--refresh-config`. Merge commit, nunca squash.
+2. **Migraciones en orden**: `bash ~/.config/worktrunk/scripts/beat-migration-order.sh` → sin ✗. Una migración ≤ max(origin/main) la saltea `db push` en prod (RYR-296, PLA-29): re-estampar al promover.
+3. **Build + tests locales** (salida literal, no "pasó"):
+   - `npm run build` en back Y app (tsc/vitest no ven errores de build; `pr-check` solo corre en PRs a main).
+   - unit: `bash scripts/run-unit-tests.sh`
+   - service: `bash scripts/test-supabase-stop.sh && bash scripts/run-service-tests.sh` (stack RECIÉN arrancado; es global :44321 → si otra sesión lo usa, esperá; nunca `docker stop`, nunca reset en caliente).
+   - e2e del módulo: `USE_DEV_SUPABASE=1 bash scripts/run-e2e.sh -- tests/e2e/<carpeta>/` (sin la variable no corre contra este stack).
+   - fallos preexistentes: A/B contra la base del trunk (revertí y re-corré) antes de declararlos ajenos.
+4. **Escalera QA LOCAL** (pre-flight): `/adlc-qa-ladder` peldaños 0-6, 8, 9; el 7 contra el stack local queda PARCIAL. Peldaño 8 = `/pr-review`. Es read-only: lo que encuentre → subPR de fix.
+5. **Preview** (solo existe para PRs con base `main`, `preview-deploy.yml:6`):
+   - Vehículo: PR trunk → main (back) + PR homónimo en `ryr-39255` (el preview empareja la app por NOMBRE de rama). Para validar un subPR antes del trunk: rama `preview/<slug>` = trunk + fix + `merge origin/main`, PR "SOLO PREVIEW" a main, y se cierra al rescatar la evidencia.
+   - Labels: `deploy:staging` + `deploy:preview`. `skip:e2e` SOLO con una línea de justificación en el body (el repo lo prohíbe en cambios de aplicación, `docs/PREVIEW_ENVIRONMENTS.md:11`).
+   - Esperar sin `sleep`: Monitor con `until ! gh pr checks <N> -R ivaldovinos-app/apprecio-pulse 2>&1 | grep -qE 'pending|in_progress'; do sleep 30; done` (un solo vigilante por PR).
+   - Verificar que sirve TU código: el log no dice "App branch ... not found — using 'main'"; `python3 ~/.claude/skills/preview-db/preview_db.py list` (tag → revisión) = HEAD. Si falla gcloud → César corre `! gcloud auth login`. Tras un redeploy, re-login (el JWT viejo se invalida).
+   - Smoke: flag activo, usuario demo válido, UI usable (chrome-devtools; capturas en `.beat/evidence/`), resultado confirmado en BD con `preview_db.py <PR> get/count`. Escribir en el preview (`--confirm`) lo corre César con `!`.
+6. **Escalera QA sobre el PREVIEW** (Convergence Mode: revalida 7, 4 y 3): `/adlc-qa-ladder <PR> --issue <ID>`. Veredicto contra el ISSUE. **Sin esta escalera en PASS/PASS CONDICIONADO no se redacta la solicitud.** C0/C1 → subPR de fix → redeploy → escalera otra vez.
+7. **Antes del borrador**: HEAD del último `/pr-review` == HEAD actual (si no, revisar el delta); re-leer el hilo de Linear desde el último comentario visto; cada cifra/afirmación del borrador con su comando o fuente.
+8. **Solicitud** (borrador vía `/voz`; César publica; 1 OK = 1 publicación): un solo comentario; el issue pasa a **In Review**. Destinatario por PRECEDENTE (bitácora `publicar-*.md` / hilo del issue o del padre). URLs del comentario "Preview Environment" del PR. Sin rutas locales, bitácora ni engram en el texto; cc al final; nunca "merge" ni "si quieres lo hago yo".
+   - **Primera solicitud** → Plantilla A.
+   - **Iteración tras un veredicto** → REPLY (`parentId`) al comentario del veredicto con las condiciones cerradas y la evidencia nueva; no un comentario nuevo de primer nivel.
+   - **Cierre** (aprobaciones completas) → Plantilla D.
 
 ---
-**Plantilla A — Code Review + QA juntas (solo primer QA, tras tu OK técnico)**
+**Plantilla A — Solicitud de QA + Code Review (default vigente, RYR-286/296/298/300)**
 
-### **Solicitudes formales**
+### **Solicitud formal de QA y Code Review**
 
-Con el estándar técnico ya validado de mi parte (revisión interna /pr-review en READY TO MERGE):
+@ignacio — El issue pasa a **In Review**. Solicito formalmente QA con tu worker y code review de los PRs, con el estándar técnico validado de mi parte (escalera QA sobre el preview + `/pr-review` en READY TO MERGE):
+* PR#XXX (BACKOFFICE): [ivaldovinos-app/apprecio-pulse#XXX](link)
+* PR#YY (APP): [ivaldovinos-app/ryr-39255#YY](link)
 
-@hakeem — Solicito formalmente revisión de Code Review de tus agentes en el PR:
-* PR#XXX (BACKOFFICE): [ivaldovinos-app/apprecio-pulse#XXX](link-linear)
-
-@nicole — Solicito formalmente revisión de primer ciclo de QA en este PR#XXX.
-Comparto los ambientes para revisión de QA una vez que estés disponible
-(teniendo en cuenta que la prioridad actual es ...):
-
+Ambientes:
 * **Backoffice:** https://pr-XXX.apprecio-pulse-preview.pages.dev
-* **App Pulse:** https://pr-XXX.ryr-app-preview.pages.dev
+* **App:** https://pr-XXX.ryr-app-preview.pages.dev
+
+Mapa de riesgo: <invariantes · dónde apunta el riesgo · qué es preexistente y no del PR>.
+
+cc @hakeem
+
+> Si el precedente del issue o del padre fija otro reparto (CR a @hakeem con sus agentes, QA a @nicole), seguí el precedente.
 
 ---
-**Plantilla B — Solo Code Review (iteraciones — va PRIMERO)**
+**Plantilla D — Listo para merge (cierre)**
 
-### **Solicitud de Code Review (iteración)**
+@hakeem — Con las aprobaciones completas:
+* Code review: READY TO MERGE · QA: aprobado
+* Trunks al día con main · CI en verde · migraciones en orden (`beat-migration-order.sh` sin ✗)
 
-@hakeem — Apliqué los fixes de la vuelta anterior. Solicito formalmente nueva revisión de Code Review de tus agentes en el PR:
-* PR#XXX (BACKOFFICE): [ivaldovinos-app/apprecio-pulse#XXX](link-linear)
-
----
-**Plantilla C — Solo QA (iteraciones — DESPUÉS del READY TO MERGE del code review)**
-
-### **Solicitud de QA (iteración)**
-
-@nicole — Code review en READY TO MERGE. Solicito formalmente nuevo ciclo de QA.
-Comparto los ambientes (teniendo en cuenta que la prioridad actual es ...):
-
-* **Backoffice:** https://pr-XXX.apprecio-pulse-preview.pages.dev
-* **App Pulse:** https://pr-XXX.ryr-app-preview.pages.dev
-
-cc @hakeem (para visibilidad)
-
----
-**Plantilla D — Listo para Merge (cierre)**
-
-@hakeem
-
-Ya con las aprobaciones completas:
-
-* Code review: READY TO MERGE en ambos PRs
-* QA: Aprobado
-* Ramas actualizadas: ambos trunks al día con main
-* Workflows CI: pasaron en verde
-
-PRs listos para merge:
-* Backoffice: PR #XXX [link]
-* App cliente: PR #YY [link]
-
-**Orden de deploy obligatorio:** PR #XXX (backend) mergeado ANTES de PR #YY (frontend). ...
-@hakeem esta condición es tuya como dueño del deploy.
-" ;;
-    *) flujo_qa_block="
-**Fase 2 — Preparar para QA**: es **back-driven** (tests, \`/pr-review\`, labels \`deploy:staging\`+\`deploy:preview\`+\`skip:e2e\`, preview, borrador a Hakeem) → se maneja desde el back (\`back-pulse-cesar.$SUFFIX\`), ver su \`CLAUDE.local.md\`. Esta es la app (pair): NO dupliques el flujo acá.
-" ;;
+PRs: Backoffice #XXX · App #YY. **Orden de deploy:** backend (#XXX) ANTES que frontend (#YY). La condición es tuya como dueño del deploy.
+FASE
+)" ;;
+    *) flujo_qa_block="$(cat <<'FASE'
+**Flujo**: es **back-driven** (spec, gate, tests, preview, escalera QA y solicitud se manejan desde el worktree del back; ver su `CLAUDE.local.md`). En la app NO dupliques ese flujo, salvo:
+- El PR de la app también lleva su spec en `docs/specs/` y el body lo cita (el gate de la app lo exige).
+- `npm run build` + tests de la app antes de pedir QA.
+- La rama de la app se llama IGUAL que la del back (el preview las empareja por nombre).
+FASE
+)" ;;
   esac
   cat > "$target/CLAUDE.local.md" <<EOF
 # Beat Workspace — worktree aislado (auto-generado por beat-isolate.sh — NO commitear)
 
-## ⚠️ Flujo de la rama — LO PRIMERO (no omitir, en orden)
-Este repo opera bajo ADLC v4.2 (ver \`CLAUDE.md\`).
+## ⚠️ LO PRIMERO (en orden)
+Este repo opera bajo ADLC (ver \`CLAUDE.md\`; ese archivo y \`stages/**\` son del equipo y se sincronizan desde ADLC core: NO se editan).
+$bitacora_line
+- \`mem_search\` (project "recognition-and-rewards") con el ID y el módulo antes de actuar.
 
-**Fase 1 — Desarrollo**
-1. \`/adlc-start\` ANTES de tocar código (arranque del flujo, no opcional).
-2. **No build/PR sin spec**: el spec en \`docs/specs/*.md\` debe existir Y estar referenciado en el body del PR ANTES de abrir el PR. Si abrís el PR sin spec, el \`gate-check\` de CI sale ROJO ("Missing spec file path") y queda PERMANENTE → tocaría abrir un PR nuevo.
-3. Orden: spec (Stage 1) → build + tests (Stage 2) → \`bash scripts/adlc/gate-check.sh\` local en verde → abrir el PR YA completo (spec + body) → CI gate verde desde el primer run.
 $flujo_qa_block
+
+## Reglas de ejecución (errores medidos en 212 sesiones, sep-2026)
+- **Git**: la base es solo lectura. Leer otra rama = \`git show <ref>:<path>\` / \`git grep <p> <ref>\`. Stash solo explícito (\`push -m … -- <paths>\`, \`apply/drop <ref>\`). Si el guard bloquea algo, NO lo esquives: reportalo.
+- **Pair**: \`git -C <pair>\` o rutas absolutas; nunca \`cd\` al pair en un Bash compartido.
+- **gh**: siempre \`-R ivaldovinos-app/apprecio-pulse\` o \`-R ivaldovinos-app/ryr-39255\`.
+- **BD local**: no hay psql en el host → \`source <worktree-del-back>/.beat/q.sh\`; \`cols <tabla>\` ANTES de escribir un SELECT/INSERT; \`Q "<sql>"\`.
+- **Esperas**: \`run_in_background\` o Monitor; nunca \`sleep\` ni \`--watch\` en primer plano.
+- **Evidencia/capturas/bodies de PR**: en \`.beat/\` del worktree (ignorado por git), no en \`/tmp\`.
+- **Afirmaciones**: cada número o "todos/ninguno" sale de un comando citado (repo · HEAD · N). Lo que no mediste, no lo afirmes.
+- **Hallazgos preexistentes**: tabla para Ignacio antes del primer commit; un issue nuevo solo si César lo pide.
 
 ## Estás acá
 - Repo: $role_label
@@ -374,6 +396,7 @@ if [ "$MODE" = "doc" ]; then
     exit 0
   fi
   compute_ports "$SLOT"
+  [ "$BACK_WT" = "$WT_DIR" ] && write_beat_helpers "$WT_DIR" "$PROJECT_ID"
   write_claude_local "$WT_DIR" "$ROLE_LABEL" "$(branch_of "$WT_DIR")" "$PAIR_LABEL" "$PAIR_DIR"
   exit 0
 fi
@@ -401,6 +424,7 @@ if [ "$MODE" = "release" ] || [ "$MODE" = "refresh" ]; then
   fi
   compute_ports "$SLOT"
   write_isolated_config
+  write_beat_helpers "$WT_DIR" "$PROJECT_ID"
   echo "config.toml regenerado desde HEAD para el slot $SLOT ($PROJECT_ID, API :$API_PORT)."
   exit 0
 fi
@@ -425,6 +449,7 @@ echo "$SLOT" > "$SLOT_FILE"
 
 # config.toml aislado: el de HEAD de esta rama con project_id + puertos del slot (+ skip-worktree).
 write_isolated_config
+write_beat_helpers "$WT_DIR" "$PROJECT_ID"
 
 echo "$PROJECT_ID" > "$WT_DIR/.supabase-project-id.local"
 

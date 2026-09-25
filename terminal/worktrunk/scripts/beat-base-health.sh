@@ -63,5 +63,18 @@ check_base() {
 check_base "$BACK" "back (back-pulse-cesar)"
 check_base "$APP" "app (app-rr-cesar)"
 
+# Slots de aislamiento (MAX_SLOTS de beat-isolate.sh). Sin slot libre, beat-isolate falla DESPUÉS
+# de crear el worktree y éste queda apuntando al stack de la base (RYR-298, 14-sep-2026).
+MAX_SLOTS=20
+used=$(for wt in $(git -C "$BACK" worktree list --porcelain | awk '/^worktree /{print $2}'); do
+  [ -f "$wt/.worktree-slot" ] && echo x; done | wc -l | tr -d ' ')
+if [ "$used" -ge "$MAX_SLOTS" ]; then
+  echo "✗ [base-health] Sin slots libres ($used/$MAX_SLOTS): el worktree nacería SIN aislar, sobre el stack de la base."
+  echo "  Liberá uno con 'wt remove <rama>' (revisá antes que no tenga WIP sin commitear)."
+  fail=1
+elif [ "$used" -ge $((MAX_SLOTS - 2)) ]; then
+  echo "⚠ [base-health] Quedan $((MAX_SLOTS - used)) slots libres ($used/$MAX_SLOTS)."
+fi
+
 [ "$fail" -eq 1 ] && echo "✗ [base-health] Creación abortada: limpiá la base y reintentá."
 exit "$fail"
