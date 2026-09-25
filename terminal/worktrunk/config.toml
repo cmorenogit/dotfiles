@@ -48,3 +48,12 @@ post-remove.supacode-refresh = 'command -v supacode >/dev/null && [ -n "${SUPACO
 # estén limpias y al día. Base sucia → aborta (incidente 15/16-sep-2026: base con 746 archivos
 # del padre staged). target_worktree_path vacío = creación; con valor = switch a uno existente (no-op).
 pre-switch.base-health = 'bash "$HOME/.config/worktrunk/scripts/beat-base-health.sh" {{ target_worktree_path | default("") }}'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Alias de Beat: una rama = un worktree = una sesión de Claude (en Supacode).
+#   wt issue <rama> <ID> [--base <ref>]   crea el worktree (wt switch -c + hooks) y abre claude '/implementar <ID>'
+#   wt issue-open <rama> <ID>             abre otra sesión en un worktree que ya existe
+# ─────────────────────────────────────────────────────────────────────────────
+[aliases]
+issue = 'bash "$HOME/.config/worktrunk/scripts/beat-spawn.sh" {{ args }}'
+issue-open = 'bash "$HOME/.config/worktrunk/scripts/beat-spawn.sh" --open {{ args }}'

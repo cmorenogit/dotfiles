@@ -381,7 +381,7 @@ $pair_line
   merge/rebase → \`bash ~/.config/worktrunk/scripts/beat-isolate.sh --refresh-config\`.
 
 ## Crear OTRO worktree (MI flujo = worktrunk, back-driven)
-- Desde \`back-pulse-cesar\`: \`wt switch --create <rama>\` → crea el par de la app y aísla solo.
+- Para un issue: \`wt issue <rama> <ID>\` (worktree + par de la app + sesión de Claude en Supacode con /implementar). Otra sesión en un worktree existente: \`wt issue-open <rama> <ID>\`. Sin sesión: \`wt switch --create <rama>\` desde \`back-pulse-cesar\`.
 - NO uses \`scripts/worktree-setup.sh\` (ese es el flujo del EQUIPO que documenta el CLAUDE.md del repo; yo uso worktrunk).
 - Crealo SIEMPRE desde el back (el back es dueño del stack Supabase y provisiona ambos).
 

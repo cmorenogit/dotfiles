@@ -1,6 +1,6 @@
 ---
 name: implementar
-description: Implementa un issue de Linear de Beat de punta a punta DENTRO del worktree de su rama (ya creado con wt switch -c / beat-spawn.sh) — contexto, plan con /grill, subPRs al trunk validados por ADLC, promoción con preview (3 labels) y escalera QA, hasta el borrador de la solicitud de QA + Code Review. Uso — /implementar <ID>. Nunca crea ramas ni worktrees.
+description: Implementa un issue de Linear de Beat de punta a punta DENTRO del worktree de su rama (ya creado con `wt issue <rama> <ID>`) — contexto, plan con /grill, subPRs al trunk validados por ADLC, promoción con preview (3 labels) y escalera QA, hasta el borrador de la solicitud de QA + Code Review. Uso — /implementar <ID>. Nunca crea ramas ni worktrees.
 disable-model-invocation: true
 argument-hint: <ID de Linear, p. ej. RYR-301>
 ---
@@ -11,7 +11,7 @@ argument-hint: <ID de Linear, p. ej. RYR-301>
 
 ## 0. Guarda (antes de todo)
 
-1. Esta sesión corre en un **worktree** (no en la base): `git rev-parse --git-dir` ≠ `--git-common-dir`. Si estás en `back-pulse-cesar` o `app-rr-cesar` sin sufijo → **detenete** y decile a César: `bash ~/.config/worktrunk/scripts/beat-spawn.sh <rama> <ID>`.
+1. Esta sesión corre en un **worktree** (no en la base): `git rev-parse --git-dir` ≠ `--git-common-dir`. Si estás en `back-pulse-cesar` o `app-rr-cesar` sin sufijo → **detenete** y decile a César: `wt issue <rama> <ID>` (crea el worktree y abre la sesión con /implementar).
 2. La rama corresponde al issue (el ID está en el nombre, o César lo confirma). Si no → detenete y preguntá.
 3. **Nunca** creás ramas de otros issues ni worktrees. Los subPRs de ESTE trunk sí se crean acá (paso 4).
 

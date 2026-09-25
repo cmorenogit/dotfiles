@@ -4,7 +4,7 @@
 # dentro de ese worktree, corriendo `/implementar <ID>`. Una rama = un worktree = una sesión:
 # las sesiones no crean ramas de otras sesiones; esto lo corre César.
 #
-# Uso:
+# Uso (normalmente vía los alias de worktrunk: `wt issue …` / `wt issue-open …`):
 #   beat-spawn.sh <rama> <ID> [--base <ref>] [--background]   crear worktree (wt switch -c) + sesión
 #   beat-spawn.sh --open <rama> <ID> [--background]            nueva sesión en un worktree existente
 #
@@ -20,6 +20,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --open) OPEN=1; shift ;;
     --base) BASE_REF="$2"; shift 2 ;;
+    --base=*) BASE_REF="${1#--base=}"; shift ;;
     --background) BG="--background"; shift ;;
     --cmd) CMD_OVERRIDE="$2"; shift 2 ;;   # solo para pruebas: reemplaza el comando de la pestaña
     *) args+=("$1"); shift ;;
