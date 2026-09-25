@@ -75,6 +75,10 @@ Ante cualquier decisión técnica, evaluar en este orden:
 ## Git
 Conventional Commits en inglés: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`.
 
+**Leer otra rama NO escribe el árbol.** Para ver código de otro ref: `git show <ref>:<path>`, `git grep <patrón> <ref>`, `git diff <a> <b>`, o un worktree temporal (`git worktree add --detach /tmp/<x> <ref>`). NUNCA `git checkout/restore <ref> -- <paths>` para "leer": sobrescribe archivos e index sin mover HEAD (incidente 15/16-sep-2026: la base de Beat quedó con 746 archivos del padre staged sobre `main`).
+
+**Carpetas base = solo lectura.** Un repo con worktrees (p. ej. `back-pulse-cesar`, `app-rr-cesar`) es la BASE: ahí solo `git fetch` y `git pull --ff-only`. Nada de editar, `checkout -- <paths>`, `restore`, `reset --hard`, `clean -f` ni `stash`. El trabajo va en su worktree. Un guard de Claude Code (`~/.claude/hooks/git-base-guard.py`) lo bloquea; en otros CLI aplica esta regla.
+
 ## Bitácora de issue (memoria viva que sobrevive a sesiones y /compact)
 Issues que **cruzan sesiones o tienen decisiones reales** (no un fix de 1 línea) llevan una bitácora viva: doc `00-bitacora.md` en el vault — 3 niveles (Producto · Seguimiento · Decisiones con pivoteo) — vía skill `/bitacora`. Es **comportamiento, no comandos**: un verbo, dos direcciones, implícito (decir "bitácora" ya implica producto + seguimiento + decisiones/pivoteo).
 - **Al arrancar/retomar** un issue con bitácora → leela primero (ponete al día). No codear sin el contexto.
