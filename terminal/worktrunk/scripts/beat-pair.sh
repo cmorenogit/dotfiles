@@ -60,8 +60,15 @@ if [ -d "$paired" ]; then
       # de la carpeta base del pair (puede estar atrasado u en otra rama). --no-track: una rama
       # nacida de origin/main no debe quedar con upstream origin/main (el push iría a main).
       git -C "$paired" fetch -q origin 2>/dev/null
-      start="origin/main"
-      git -C "$paired" rev-parse -q --verify "refs/remotes/origin/$BASE_REF" >/dev/null && start="origin/$BASE_REF"
+      # Orden: origin/<base> → <base> local (trunk aún sin push) → origin/main (avisando).
+      if git -C "$paired" rev-parse -q --verify "refs/remotes/origin/$BASE_REF" >/dev/null; then
+        start="origin/$BASE_REF"
+      elif git -C "$paired" rev-parse -q --verify "refs/heads/$BASE_REF" >/dev/null; then
+        start="$BASE_REF"
+      else
+        start="origin/main"
+        [ "$BASE_REF" != "main" ] && echo "[beat-pair] ⚠ '$BASE_REF' no existe en el pair (ni remoto ni local) — el pair parte de origin/main"
+      fi
       echo "[beat-pair] Rama nueva $BRANCH desde $start"
       git -C "$paired" worktree add --no-track -b "$BRANCH" "$paired_worktree_path" "$start" 2>&1 | sed 's/^/[beat-pair] /'
     fi
