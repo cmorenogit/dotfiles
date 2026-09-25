@@ -35,6 +35,9 @@ Además (análisis de 212 sesiones Beat, 25-sep-2026):
     o si el PR tiene checks pendientes o en rojo (el merge al trunk lo valida ADLC + CI).
   - gh pr create hacia main en apprecio-pulse sin los 3 labels del preview → deny (usar beat-promote.sh);
     quitar deploy:preview/deploy:staging de un PR → deny (destruye el preview / saltea tests).
+  - Crear la rama de un issue de Beat desde una sesión (`wt switch --create/-c`, `git worktree add -b/-B`)
+    → deny: se usa `wt issue <rama> <ID>` (worktree + sesión propia con /implementar). `wt switch` a una
+    rama existente y `git worktree add --detach` (leer otra rama) siguen permitidos.
   - preview_db.py … --confirm: deny (la escritura en un preview la corre César con `!`).
 
 La siembra de /adlc-build-loop (`git checkout <base> -- <archivos>` en el worktree) queda
@@ -170,6 +173,16 @@ def _is_back_repo(repo, target):
     return "apprecio-pulse" in (git_out(["config", "--get", "remote.origin.url"], target) or "")
 
 
+BEAT_REMOTES = ("apprecio-pulse", "ryr-39255", "ryr-app")
+NEW_BRANCH_MSG = ("En Beat, una rama = un worktree = una sesión: la rama de un issue se crea con "
+                  "`wt issue <rama> <ID>` (worktree con sus hooks + sesión en Supacode con /implementar). "
+                  "Sugerile ese comando a César; si quiere un worktree sin sesión, lo corre él con `!`.")
+
+
+def is_beat(path):
+    return any(r in (git_out(["config", "--get", "remote.origin.url"], path) or "") for r in BEAT_REMOTES)
+
+
 def gh_rule(args, target):
     """Reglas de `gh pr create|edit|merge` (labels del preview y merge validado)."""
     if len(args) < 2 or args[0] != "pr":
@@ -264,6 +277,14 @@ def inspect(command, cwd):
             if hit and (worst is None or worst[0] != "deny"):
                 worst = hit
             continue
+        if tool == "wt":
+            wargs = seg[1:]
+            wtarget = cur
+            if "-C" in wargs and wargs.index("-C") + 1 < len(wargs):
+                wtarget = os.path.normpath(os.path.join(cur, os.path.expanduser(wargs[wargs.index("-C") + 1])))
+            if "switch" in wargs and any(a in ("--create", "-c") or a.startswith("--create=") for a in wargs) and is_beat(wtarget):
+                worst = ("deny", NEW_BRANCH_MSG)
+            continue
         if tool == "gh":
             hit = gh_rule(seg[1:], cur)
             if hit:
@@ -285,6 +306,9 @@ def inspect(command, cwd):
         if not rest:
             continue
         sub, sargs = rest[0], rest[1:]
+        if sub == "worktree" and sargs[:1] == ["add"] and any(a in ("-b", "-B") for a in sargs) and is_beat(target):
+            worst = ("deny", NEW_BRANCH_MSG)
+            continue
         # Reglas que dependen del estado del worktree (solo fuera de la base).
         if not is_base(target):
             if sub == "checkout" and "--" in sargs:
@@ -322,7 +346,7 @@ def main():
         payload = json.load(sys.stdin)
         command = (payload.get("tool_input") or {}).get("command") or ""
         cwd = payload.get("cwd") or os.getcwd()
-        if not any(k in command for k in ("git", "supabase", "gh ", "preview_db")):
+        if not any(k in command for k in ("git", "supabase", "gh ", "preview_db", "wt ")):
             return
         try:
             result = inspect(command, cwd)

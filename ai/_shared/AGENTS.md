@@ -87,6 +87,8 @@ Conventional Commits en inglés: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`,
 
 **Carpetas base = solo lectura.** Un repo con worktrees (p. ej. `back-pulse-cesar`, `app-rr-cesar`) es la BASE: ahí solo `git fetch` y `git pull --ff-only`. Nada de editar, `checkout -- <paths>`, `restore`, `reset --hard`, `clean -f` ni `stash`. El trabajo va en su worktree. Un guard de Claude Code (`~/.claude/hooks/git-base-guard.py`) lo bloquea; en otros CLI aplica esta regla.
 
+**Crear la rama de un issue de Beat:** siempre `wt issue <rama> <ID>` (worktree + sesión propia con `/implementar`); si César pide crear una rama o worktree de Beat, sugerí ese comando. Desde una sesión, `wt switch -c` y `git worktree add -b` están bloqueados en Beat.
+
 **En worktrees:** nada de `checkout/restore` con pathspec amplio (`.`, `:/`, `*`). La pila de stash es COMPARTIDA entre worktrees: nunca `git stash` a secas, `pop`, `clear`, ni `apply`/`drop` sin ref. Solo `stash push -m <msg> -- <paths>` y `stash apply/drop <ref>` explícitos.
 
 ## Bitácora de issue (memoria viva que sobrevive a sesiones y /compact)
