@@ -15,6 +15,8 @@ Lo crítico (resumen de equipo, mapping cwd→vault, regla wrappers multi-repo, 
 
 ## Engram — implementación en Claude Code
 
+> **Desde 25-sep-2026: engram 2.2.0 + plugin 0.1.3.** El servidor MCP es el de usuario `engram` (herramientas `mcp__engram__*`; si no aparecen, cargarlas con ToolSearch), registrado por `engram setup claude-code`: el plugin ya no trae MCP propio, así que ese registro NO se borra. Protocolo de inicio en modo `slim`. El proyecto de Beat lo fija `ENGRAM_PROJECT=recognition-and-rewards` (settings.local.json de cada worktree). Las convenciones clave están fijadas (`mem_pin`) y aparecen primero en el contexto. Herramientas de admin (`mem_merge_projects`, `mem_pin`) no están en el perfil `agent`: se usan con `engram mcp --tools=all` por stdio. Rollback: `~/.engram/rollback-1.16.1/` + `engram.db.backup-pre-v2-*`.
+
 Engram provee memoria persistente cross-session via skill `engram:memory` (always active) + tools MCP. Para el **principio y reglas generales** ver "Memoria persistente y aprendizajes" en AGENTS.md.
 
 ### Tools core (siempre disponibles, sin ToolSearch)
