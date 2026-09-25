@@ -49,3 +49,13 @@ export PATH="$HOME/.opencode/bin:$PATH"
 if [[ -n "$SSH_CONNECTION" && -o interactive && "$PWD" == "$HOME" && -d "$HOME/Code" ]]; then
   cd "$HOME/Code"
 fi
+
+# ── Sesiones de agentes (Claude Code exporta CLAUDECODE=1) ────────────────────
+# El snapshot de shell del agente hereda este perfil. Análisis de 212 sesiones (25-sep-2026):
+# ~60 errores por `ls`→eza con `--icons` (se come el siguiente argumento), `noclobber`
+# ("file exists" y logs viejos leídos como nuevos) y el alias `t`. Solo aplica al agente;
+# la terminal interactiva queda igual. sed/date de ~/bin son GNU: está documentado en AGENTS.md.
+if [[ -n "$CLAUDECODE" ]]; then
+  unalias ls ll la las t 2>/dev/null
+  unsetopt noclobber
+fi
