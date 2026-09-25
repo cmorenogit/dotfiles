@@ -11,7 +11,7 @@ Toma el insumo de comprensión (de `/linear-lore`) y produce el borrador de resp
 
 ## 0 · Encuadrar (siempre)
 
-Corré `lane`: ¿esto es mi lane técnico, o es decisión de producto / QA / scope de otro? Si es de otro → la respuesta correcta es **rutear** (Ignacio / Nicole / Julieth) con el insumo, no resolver. Si es validación de producto (alcance, priorización) → aportá insumo técnico, no cierres el alcance (T5).
+Corré `lane`: ¿esto es mi lane técnico, o es decisión de producto / QA / scope de otro? Si es de otro → la respuesta correcta es **rutear** (Ignacio / Hakeem / Nicole) con el insumo, no resolver. Si es validación de producto (alcance, priorización) → aportá insumo técnico, no cierres el alcance (T5).
 
 Clasificá el tipo (insumo de lore): **review** → §1 · **consulta / duda** → §2 · **mención / acuse** → respuesta directa breve (§3).
 

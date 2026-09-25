@@ -12,7 +12,7 @@ Se para sobre `/transcripcion`: reusa su motor (`transcripcion.py`) para resolve
 
 ## Identidad de César — el recorte gira en torno a esto
 
-"César" = `Cesar Moreno`, `Cesar`, `César`, `nfierro@apprecio.com`. Todo lo que clasifiques es **respecto a él**: ¿le toca a César? ¿lo espera César de otro? Ese recorte centrado en él es lo que distingue esta síntesis de un resumen genérico. Equipo para ubicar a quién es qué: Ignacio (jefe de producto, despliega), Julieth (QA), Nicole (producto), Samuel/Faber/Kevin/Jhoan (devs), Cristian (Incentivos/Core).
+"César" = `Cesar Moreno`, `Cesar`, `César`, `nfierro@apprecio.com`. Todo lo que clasifiques es **respecto a él**: ¿le toca a César? ¿lo espera César de otro? Ese recorte centrado en él es lo que distingue esta síntesis de un resumen genérico. Equipo para ubicar a quién es qué: Ignacio (jefe de producto), Hakeem (code review, merge y deploy), Nicole (QA), Javier (producto), Samuel/Faber/Kevin/Jhoan (devs), Cristian (Incentivos/Core).
 
 ## Flujo
 
@@ -44,7 +44,7 @@ Se para sobre `/transcripcion`: reusa su motor (`transcripcion.py`) para resolve
 
 **▸ ACCIÓN** — lo que mueve la aguja:
 - **① Me toca** — acción o decisión que cae en César (incluye su rol de stopper técnico: dar veredicto, aprobar, definir el approach).
-- **② Espero de otro** — algo que César necesita que otro haga (Ignacio despliega, Julieth valida, un dev entrega). Es seguimiento.
+- **② Espero de otro** — algo que César necesita que otro haga (Hakeem despliega, Nicole valida, un dev entrega). Es seguimiento.
 
 **▸ PARA SABER** — referencia, sin acción de César:
 - **③ Quedó decidido** — decisión cerrada en la reu que cambia el mundo de César (no le asigna acción, pero importa; no re-litigar).

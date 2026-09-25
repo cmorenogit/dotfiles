@@ -50,7 +50,6 @@ Support escalation channel. 10 human members.
 |------|------|---------|-------------|
 | Ignacio Valdovinos | Jefe Producto | 102600559492068881144 | 9nBLjcAAAAE |
 | Nicole Fierro | QA + Doc | 113724492086510362927 | jCHJU8AAAAE |
-| Julieth Ruiz | QA | 105837369684866007379 | rC85mCAAAAE |
 | Faber Herrera | Dev (App + Desafios) | 112211994231617083712 | yFY4B8AAAAE |
 | Kevin Acuna | Dev (App movil) | 105907356619822194289 | oYs5hCAAAAE |
 | Diana (SaaS) | Reporta errores | 115802704722893639805 | ynvsjcAAAAE |
@@ -233,5 +232,5 @@ done
 | "que dice el chat" | Last 20 messages from Product Team |
 | "busca X en el chat" | Text search with local grep in Product Team |
 | "mensajes de Mantenimiento" | Last 20 from AAQAMjc6GIs |
-| "DM con Ignacio/Nicole/Julieth" | Use mapped DM space ID directly |
+| "DM con Ignacio/Nicole" | Use mapped DM space ID directly |
 | "quien me menciono hoy" | @mentions across all key spaces, today filter |

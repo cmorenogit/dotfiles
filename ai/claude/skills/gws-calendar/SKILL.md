@@ -123,7 +123,7 @@ gws calendar events insert --params '{"calendarId": "primary", "conferenceDataVe
   "end": {"dateTime": "2026-03-06T11:00:00-05:00", "timeZone": "America/Lima"},
   "attendees": [
     {"email": "ivaldovinos@apprecio.com"},
-    {"email": "jruiz@dcanje.com"}
+    {"email": "nfierro@apprecio.com"}
   ],
   "conferenceData": {
     "createRequest": {"requestId": "meet-unique-id", "conferenceSolutionKey": {"type": "hangoutsMeet"}}
@@ -209,7 +209,6 @@ for c in d.get('items',[]):
 |------|-------|
 | Ignacio Valdovinos | ivaldovinos@apprecio.com |
 | Nicole Fierro | nfierro@dcanje.com |
-| Julieth Ruiz | jruiz@dcanje.com |
 | Faber Herrera | fherrera@apprecio.com |
 | Kevin Acuna | kevinacuna@apprecio.com |
 | Stephanie D'Angelo | sdangelo@dcanje.com |

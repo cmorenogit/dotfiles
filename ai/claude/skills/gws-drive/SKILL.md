@@ -160,7 +160,6 @@ gws drive files update --params '{"fileId": "FILE_ID"}' --json '{"trashed": true
 |------|-------|
 | Ignacio Valdovinos | ivaldovinos@apprecio.com |
 | Nicole Fierro | nfierro@dcanje.com |
-| Julieth Ruiz | jruiz@dcanje.com |
 | Faber Herrera | fherrera@apprecio.com |
 | Kevin Acuna | kevinacuna@apprecio.com |
 | Stephanie D'Angelo | sdangelo@dcanje.com |
